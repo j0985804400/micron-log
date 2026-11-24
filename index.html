@@ -468,6 +468,7 @@
     return `${mm}/${dd} ${hh}:${mi}`;
   }
 
+  // 存檔專用的 1600px 高解析壓縮
   function compressImage(file) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -491,6 +492,34 @@
     });
   }
 
+  // 單號辨識專用的 900px 輕量縮圖，加快上傳與辨識速度（不影響存檔的 1600px 原圖）
+  function downscaleDataUrlForOcr(dataUrl, maxDim = 900, quality = 0.72) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w <= maxDim && h <= maxDim) {
+          resolve(dataUrl);
+          return;
+        }
+        if (w > h) {
+          h = Math.round(h * maxDim / w);
+          w = maxDim;
+        } else {
+          w = Math.round(w * maxDim / h);
+          h = maxDim;
+        }
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
   async function detectNumbersFromPhotos(photoList, mode) {
     const hintEl = document.getElementById(mode === "in" ? "in-ocr-hint" : "edit-ocr-hint");
     const nrsInput = document.getElementById(mode === "in" ? "in-nrs" : "edit-nrs");
@@ -511,15 +540,19 @@
 
     btnOcr.disabled = true;
     hintEl.classList.add("show");
-    hintEl.innerHTML = "⏳ 正在偵測照片中的 <b>No. NRS (6碼)</b> 與 <b>8開頭 (7碼)</b> 單號...";
+    hintEl.innerHTML = "⚡ 正在快速辨識 <b>No. NRS (6碼)</b> 與 <b>8開頭 (7碼)</b> 單號...";
 
     try {
+      const lightPhotos = await Promise.all(
+        base64Photos.slice(0, 4).map(p => downscaleDataUrlForOcr(p, 900, 0.72))
+      );
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           action: "ocr",
-          photos: base64Photos
+          photos: lightPhotos
         })
       });
       const data = await res.json();
@@ -551,7 +584,7 @@
       hintEl.innerHTML = `<div>✨ 偵測結果（點按鈕可一鍵套用）：</div><div class="ocr-chips">${chips.join("")}</div>`;
       toast("✨ 單號偵測完成");
     } catch (err) {
-      hintEl.innerHTML = `⚠️ 單號偵測失敗：${esc(err.message || "請檢查 Apps Script 是否已設定 GEMINI_API_KEY 並部署新版本")}`;
+      hintEl.innerHTML = `⚠️ 單號偵測失敗：${esc(err.message || "請檢查 Apps Script 設定與部署版本")}`;
     } finally {
       btnOcr.disabled = false;
     }
