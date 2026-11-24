@@ -51,7 +51,7 @@
     }
     .pill.on-red { background: var(--red); color: #fff; border-color: var(--red); }
     .pill.on-amber { background: #d97706; color: #fff; border-color: #d97706; }
-    .pill.on-green { background: var(--green); color: #fff; border-color: var(--green); }
+    .pill.on-green { background: var(--green); color: #fff; border-color: #059669; }
     .pill.on-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
 
     .photo-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
@@ -78,7 +78,6 @@
       padding: 12px; margin-bottom: 10px;
     }
     .item.urgent { border-left: 6px solid var(--red); background: #fffafa; }
-    .item.done { opacity: 0.72; background: #f8fafc; }
     .item-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
     .badges { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
     .b { font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
@@ -90,14 +89,11 @@
     .b-cat-RETURN { background: #ffedd5; color: #c2410c; }
     .b-cat-NEW { background: #dcfce7; color: #15803d; }
     .b-cat-GENERAL { background: #dbeafe; color: #1e40af; }
-    .b-st-open { background: #e0e7ff; color: #3730a3; }
-    .b-st-done { background: #e2e8f0; color: #475569; }
 
     .item-main { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
     .item-sub { font-size: 13px; color: #475569; margin-bottom: 6px; }
     .item-actions { display: flex; gap: 8px; margin-top: 8px; }
-    .btn-done { flex: 2; background: var(--green); color: #fff; padding: 10px; font-size: 14px; }
-    .btn-add-photo { flex: 1; background: #f1f5f9; color: #1e293b; border: 1.5px solid var(--border); padding: 10px; font-size: 13px; }
+    .btn-add-photo { width: 100%; background: #f1f5f9; color: #1e293b; border: 1.5px solid var(--border); padding: 10px; font-size: 13px; }
     .btn-del { background: transparent; color: #94a3b8; font-size: 12px; padding: 4px 6px; }
 
     .modal {
@@ -180,10 +176,8 @@
   <div class="box" style="padding:12px;">
     <input type="text" id="q-text" placeholder="🔍 搜尋 NRS單號、放行單號、工件名稱、料號或備註..." />
     <div class="filter-row">
-      <button type="button" class="f-tab active" data-filter="OPEN">未回貨 (<span id="cnt-open">0</span>)</button>
+      <button type="button" class="f-tab active" data-filter="ALL">全部 (<span id="cnt-all">0</span>)</button>
       <button type="button" class="f-tab" data-filter="URGENT">🚨 急件 (<span id="cnt-urg">0</span>)</button>
-      <button type="button" class="f-tab" data-filter="DONE">已回貨 (<span id="cnt-done">0</span>)</button>
-      <button type="button" class="f-tab" data-filter="ALL">全部 (<span id="cnt-all">0</span>)</button>
     </div>
   </div>
 
@@ -209,11 +203,11 @@
     </div>
     <div style="margin-bottom:10px;">
       <span class="label">追加備註</span>
-      <input type="text" id="edit-note" placeholder="例：已補拍放行單 / 警衛室簽收" />
+      <input type="text" id="edit-note" placeholder="例：已補拍放行單" />
     </div>
     <div style="margin-bottom:12px;">
       <label class="btn-cam" style="display:block;">
-        📷 補拍照片（四聯單 / 放行單 / 簽收單）
+        📷 補拍照片（四聯單 / 放行單）
         <input type="file" id="edit-file" accept="image/*" capture="environment" multiple style="display:none;" />
       </label>
       <div id="edit-thumbs" class="thumbs" style="margin-top:8px;"></div>
@@ -260,7 +254,7 @@
   let records = [];
   let selectedCat = "SPECIAL";
   let draftPhotos = [];
-  let currentFilter = "OPEN";
+  let currentFilter = "ALL";
   let editingId = null;
   let editPhotos = [];
 
@@ -402,21 +396,15 @@
   function render() {
     const q = document.getElementById("q-text").value.trim().toLowerCase();
 
-    const openCnt = records.filter(r => !r.done).length;
-    const urgCnt = records.filter(r => !r.done && r.urgent).length;
-    const doneCnt = records.filter(r => r.done).length;
-    document.getElementById("cnt-open").textContent = openCnt;
-    document.getElementById("cnt-urg").textContent = urgCnt;
-    document.getElementById("cnt-done").textContent = doneCnt;
+    const urgCnt = records.filter(r => r.urgent).length;
     document.getElementById("cnt-all").textContent = records.length;
+    document.getElementById("cnt-urg").textContent = urgCnt;
 
     const catText = { SPECIAL: "🔴 特殊", RETURN: "🟠 退貨", NEW: "🟢 新品", GENERAL: "🔵 一般" };
 
     const filtered = records
       .filter(r => {
-        if (currentFilter === "OPEN" && r.done) return false;
-        if (currentFilter === "URGENT" && (r.done || !r.urgent)) return false;
-        if (currentFilter === "DONE" && !r.done) return false;
+        if (currentFilter === "URGENT" && !r.urgent) return false;
         if (q) {
           const text = `${r.nrs} ${r.passNo || ""} ${r.plant} ${r.part} ${r.note}`.toLowerCase();
           if (!text.includes(q)) return false;
@@ -424,7 +412,6 @@
         return true;
       })
       .sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1;
         if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
         return b.ts - a.ts;
       });
@@ -436,21 +423,20 @@
     }
 
     area.innerHTML = filtered.map(r => `
-      <div class="item ${r.urgent && !r.done ? "urgent" : ""} ${r.done ? "done" : ""}">
+      <div class="item ${r.urgent ? "urgent" : ""}">
         <div class="item-top">
           <div class="badges">
             ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
             ${r.nrs ? `<span class="b b-nrs">NRS ${esc(r.nrs)}</span>` : `<span class="b b-nonrs">待補單號</span>`}
             ${r.passNo ? `<span class="b b-pass">放行 ${esc(r.passNo)}</span>` : ""}
             <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
-            <span class="b ${r.done ? "b-st-done" : "b-st-open"}">${r.done ? "✅ 已回貨" : "⏳ 未回貨"}</span>
           </div>
           <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
         </div>
 
         <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
         <div class="item-sub">
-          建檔：${esc(r.createdAt)}${r.doneAt ? ` ｜ 回貨：${esc(r.doneAt)}` : ""}
+          建檔：${esc(r.createdAt)}
           ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
         </div>
 
@@ -461,10 +447,6 @@
         ` : ""}
 
         <div class="item-actions">
-          ${!r.done
-            ? `<button type="button" class="btn-done" data-done-id="${r.id}">✅ 已回貨點交</button>`
-            : `<button type="button" class="btn-add-photo" data-reopen-id="${r.id}">↩ 改回未回貨</button>`
-          }
           <button type="button" class="btn-add-photo" data-edit-id="${r.id}">📎 補單號 / 照片</button>
         </div>
       </div>
@@ -525,9 +507,7 @@
       part: part || "未填工件名稱（見照片）",
       note,
       photos: [...draftPhotos],
-      done: false,
-      createdAt: nowStr(),
-      doneAt: ""
+      createdAt: nowStr()
     });
 
     document.getElementById("in-nrs").value = "";
@@ -552,24 +532,6 @@
   document.getElementById("q-text").addEventListener("input", render);
 
   document.getElementById("list-area").addEventListener("click", async (e) => {
-    const doneBtn = e.target.closest("[data-done-id]");
-    if (doneBtn) {
-      const id = doneBtn.dataset.doneId;
-      records = records.map(r => r.id === id ? { ...r, done: true, doneAt: nowStr() } : r);
-      await save();
-      toast("✅ 已標記回貨完成");
-      return;
-    }
-
-    const reopenBtn = e.target.closest("[data-reopen-id]");
-    if (reopenBtn) {
-      const id = reopenBtn.dataset.reopenId;
-      records = records.map(r => r.id === id ? { ...r, done: false, doneAt: "" } : r);
-      await save();
-      toast("↩ 已改回未回貨");
-      return;
-    }
-
     const delBtn = e.target.closest("[data-del-id]");
     if (delBtn) {
       if (!confirm("確定刪除這筆紀錄？")) return;
