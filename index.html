@@ -164,7 +164,7 @@
 
     <div class="photo-bar">
       <label class="btn-cam">
-        📷 拍四聯單 / 放行單 / 工件照片（可多張）
+        📷 拍四聯單 / 放行單 / 工件照片（高清 1600px・可多張）
         <input type="file" id="in-file" accept="image/*" capture="environment" multiple style="display:none;" />
       </label>
     </div>
@@ -224,7 +224,7 @@
       <button type="button" id="btn-close-cfg" style="background:#e2e8f0; padding:5px 10px;">✕</button>
     </div>
     <p style="font-size:12px; color:#475569; margin-top:0; line-height:1.5;">
-      貼上試算表 Apps Script 部署後的 <code>/exec</code> 網址，紀錄會自動寫入試算表，照片會存進你的 Google Drive。
+      貼上試算表 Apps Script 部署後的 <code>/exec</code> 網址，紀錄會自動寫入試算表，照片會集中存進「科治新技_后里美光線_工件照片集」資料夾。
     </p>
     <div style="margin-bottom:12px;">
       <span class="label">Apps Script Web App 網址</span>
@@ -250,6 +250,7 @@
 
   const DB_KEY = "ktt_micron_simple_log_v1";
   const URL_KEY = "ktt_micron_sheet_url_v1";
+  const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbxNXg1SGOuOIu4ljWpklcJsOmtmox4wCUJLMj5g2wHE4Wicn8kPHmhb-jLeh74kpGKt/exec";
 
   let records = [];
   let selectedCat = "SPECIAL";
@@ -273,7 +274,8 @@
   }
 
   function getSheetUrl() {
-    return (localStorage.getItem(URL_KEY) || "").trim();
+    const saved = (localStorage.getItem(URL_KEY) || "").trim();
+    return saved || DEFAULT_SHEET_URL;
   }
 
   function setStatus(txt) {
@@ -300,7 +302,7 @@
         } else if (records.length > 0) {
           await pushToSheet(url);
         }
-        setStatus("已連線 Google 試算表（即時同步）");
+        setStatus("已連線 Google 試算表（集中存照片集・即時同步）");
       } else {
         throw new Error("格式異常");
       }
@@ -310,7 +312,7 @@
   }
 
   async function pushToSheet(url) {
-    setStatus("正在寫入 Google 試算表與 Drive...");
+    setStatus("正在寫入 Google 試算表與照片集...");
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -321,7 +323,7 @@
       records = data.records;
       saveLocal();
       render();
-      setStatus("已連線 Google 試算表（即時同步）");
+      setStatus("已連線 Google 試算表（集中存照片集・即時同步）");
     } else {
       throw new Error(data.error || "寫入失敗");
     }
@@ -367,7 +369,7 @@
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          const max = 960;
+          const max = 1600;
           let w = img.width, h = img.height;
           if (w > max || h > max) {
             if (w > h) { h = Math.round(h * max / w); w = max; }
@@ -376,7 +378,7 @@
           const c = document.createElement("canvas");
           c.width = w; c.height = h;
           c.getContext("2d").drawImage(img, 0, 0, w, h);
-          resolve(c.toDataURL("image/jpeg", 0.68));
+          resolve(c.toDataURL("image/jpeg", 0.85));
         };
         img.src = e.target.result;
       };
