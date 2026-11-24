@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>科治新技｜后里美光線・特殊工件隨手記</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --blue: #1d4ed8;
+      --red: #dc2626;
+      --green: #059669;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Segoe UI", sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 48px; }
+    button { cursor: pointer; border: none; border-radius: 10px; font-weight: 700; transition: 0.12s; touch-action: manipulation; }
+    button:active { transform: scale(0.97); }
+    input {
+      width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 16px; background: #fff; color: var(--text);
+    }
+    input:focus { outline: none; border-color: var(--blue); }
+
+    .header {
+      background: #0f172a; color: #fff; padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .header-title { font-size: 16px; font-weight: 800; letter-spacing: 0.3px; }
+    .header-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .btn-cfg { background: #334155; color: #f8fafc; padding: 7px 11px; font-size: 12px; border-radius: 8px; }
+
+    .wrap { max-width: 580px; margin: 0 auto; padding: 12px; }
+
+    .box {
+      background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 14px;
+      border: 1.5px solid #e2e8f0; box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+    }
+    .sec-title { font-size: 15px; font-weight: 800; color: var(--blue); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .pill {
+      padding: 8px 12px; font-size: 14px; border: 1.5px solid var(--border);
+      background: #f8fafc; color: #334155; border-radius: 9px;
+    }
+    .pill.on-red { background: var(--red); color: #fff; border-color: var(--red); }
+    .pill.on-amber { background: #d97706; color: #fff; border-color: #d97706; }
+    .pill.on-green { background: var(--green); color: #fff; border-color: var(--green); }
+    .pill.on-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    .photo-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
+    .btn-cam {
+      flex: 1; background: #eff6ff; color: var(--blue); border: 1.5px dashed #93c5fd;
+      padding: 11px; font-size: 14px; text-align: center; border-radius: 10px; font-weight: 700; cursor: pointer;
+    }
+    .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .thumb { position: relative; width: 76px; height: 76px; }
+    .thumb img { width: 76px; height: 76px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: zoom-in; }
+    .thumb-del {
+      position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+      background: var(--red); color: #fff; font-size: 13px; padding: 0; line-height: 1;
+    }
+
+    .btn-save { width: 100%; background: var(--blue); color: #fff; padding: 13px; font-size: 16px; border-radius: 11px; }
+
+    .filter-row { display: flex; gap: 6px; margin-top: 8px; }
+    .f-tab { flex: 1; padding: 8px 6px; font-size: 13px; background: #e2e8f0; color: #334155; border-radius: 8px; }
+    .f-tab.active { background: #0f172a; color: #fff; }
+
+    .item {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 10px;
+    }
+    .item.urgent { border-left: 6px solid var(--red); background: #fffafa; }
+    .item.done { opacity: 0.72; background: #f8fafc; }
+    .item-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .b { font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+    .b-nrs { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; font-family: monospace; font-size: 13px; }
+    .b-pass { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; font-family: monospace; font-size: 13px; }
+    .b-nonrs { background: #fee2e2; color: #b91c1c; border: 1px dashed #ef4444; }
+    .b-urg { background: var(--red); color: #fff; }
+    .b-cat-SPECIAL { background: #fee2e2; color: #b91c1c; }
+    .b-cat-RETURN { background: #ffedd5; color: #c2410c; }
+    .b-cat-NEW { background: #dcfce7; color: #15803d; }
+    .b-cat-GENERAL { background: #dbeafe; color: #1e40af; }
+    .b-st-open { background: #e0e7ff; color: #3730a3; }
+    .b-st-done { background: #e2e8f0; color: #475569; }
+
+    .item-main { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .item-sub { font-size: 13px; color: #475569; margin-bottom: 6px; }
+    .item-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-done { flex: 2; background: var(--green); color: #fff; padding: 10px; font-size: 14px; }
+    .btn-add-photo { flex: 1; background: #f1f5f9; color: #1e293b; border: 1.5px solid var(--border); padding: 10px; font-size: 13px; }
+    .btn-del { background: transparent; color: #94a3b8; font-size: 12px; padding: 4px 6px; }
+
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65);
+      z-index: 50; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 14px; padding: 16px; width: 100%; max-width: 420px; }
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #0f172a; color: #fff; padding: 10px 18px; border-radius: 99px;
+      font-size: 13px; font-weight: 700; display: none; z-index: 90;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🚚 科治新技｜后里美光線</div>
+    <div class="header-sub" id="sheet-status">尚未綁定試算表（點右上角貼上網址）</div>
+  </div>
+  <button type="button" class="btn-cfg" id="btn-open-cfg">試算表設定</button>
+</div>
+
+<div class="wrap">
+  <div class="box">
+    <div class="sec-title">
+      <span>＋ 記一筆工件</span>
+      <label style="font-size:13px; color:var(--red); display:flex; align-items:center; gap:5px; cursor:pointer;">
+        <input type="checkbox" id="in-urgent" style="width:18px; height:18px;" /> 🚨 客戶急件
+      </label>
+    </div>
+
+    <div class="pills" id="cat-pills">
+      <button type="button" class="pill on-red" data-cat="SPECIAL">🔴 特殊</button>
+      <button type="button" class="pill" data-cat="RETURN">🟠 退貨</button>
+      <button type="button" class="pill" data-cat="NEW">🟢 新品</button>
+      <button type="button" class="pill" data-cat="GENERAL">🔵 一般</button>
+    </div>
+
+    <div class="row2">
+      <div>
+        <span class="label">No. NRS 單號（無單號可留空）</span>
+        <input type="text" id="in-nrs" inputmode="numeric" />
+      </div>
+      <div>
+        <span class="label">放行單號（選填）</span>
+        <input type="text" id="in-pass" />
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <span class="label">廠區 / 客戶</span>
+        <input type="text" id="in-plant" value="美光 F16" />
+      </div>
+      <div>
+        <span class="label">機台 / 工件名稱 / 料號 *</span>
+        <input type="text" id="in-part" />
+      </div>
+    </div>
+
+    <div>
+      <span class="label">備註</span>
+      <input type="text" id="in-note" placeholder="補充說明..." />
+    </div>
+
+    <div class="photo-bar">
+      <label class="btn-cam">
+        📷 拍四聯單 / 放行單 / 工件照片（可多張）
+        <input type="file" id="in-file" accept="image/*" capture="environment" multiple style="display:none;" />
+      </label>
+    </div>
+    <div id="in-thumbs" class="thumbs"></div>
+
+    <button type="button" class="btn-save" id="btn-save">💾 儲存這筆紀錄</button>
+  </div>
+
+  <div class="box" style="padding:12px;">
+    <input type="text" id="q-text" placeholder="🔍 搜尋 NRS單號、放行單號、工件名稱、料號或備註..." />
+    <div class="filter-row">
+      <button type="button" class="f-tab active" data-filter="OPEN">未回貨 (<span id="cnt-open">0</span>)</button>
+      <button type="button" class="f-tab" data-filter="URGENT">🚨 急件 (<span id="cnt-urg">0</span>)</button>
+      <button type="button" class="f-tab" data-filter="DONE">已回貨 (<span id="cnt-done">0</span>)</button>
+      <button type="button" class="f-tab" data-filter="ALL">全部 (<span id="cnt-all">0</span>)</button>
+    </div>
+  </div>
+
+  <div id="list-area"></div>
+</div>
+
+<!-- 補單號 / 補拍照片小視窗 -->
+<div id="modal-edit" class="modal">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <strong style="font-size:16px;">📎 補單號 / 補拍照片</strong>
+      <button type="button" id="btn-close-edit" style="background:#e2e8f0; padding:5px 10px;">✕</button>
+    </div>
+    <div class="row2">
+      <div>
+        <span class="label">No. NRS 四聯單單號</span>
+        <input type="text" id="edit-nrs" inputmode="numeric" placeholder="輸入補上的單號" />
+      </div>
+      <div>
+        <span class="label">放行單號</span>
+        <input type="text" id="edit-pass" placeholder="輸入放行單號" />
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <span class="label">追加備註</span>
+      <input type="text" id="edit-note" placeholder="例：已補拍放行單 / 警衛室簽收" />
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="btn-cam" style="display:block;">
+        📷 補拍照片（四聯單 / 放行單 / 簽收單）
+        <input type="file" id="edit-file" accept="image/*" capture="environment" multiple style="display:none;" />
+      </label>
+      <div id="edit-thumbs" class="thumbs" style="margin-top:8px;"></div>
+    </div>
+    <button type="button" class="btn-save" id="btn-save-edit">確認更新</button>
+  </div>
+</div>
+
+<!-- Google 試算表網址設定視窗 -->
+<div id="modal-cfg" class="modal">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <strong style="font-size:16px;">Google 試算表同步設定</strong>
+      <button type="button" id="btn-close-cfg" style="background:#e2e8f0; padding:5px 10px;">✕</button>
+    </div>
+    <p style="font-size:12px; color:#475569; margin-top:0; line-height:1.5;">
+      貼上試算表 Apps Script 部署後的 <code>/exec</code> 網址，紀錄會自動寫入試算表，照片會存進你的 Google Drive。
+    </p>
+    <div style="margin-bottom:12px;">
+      <span class="label">Apps Script Web App 網址</span>
+      <input type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec" />
+    </div>
+    <button type="button" class="btn-save" id="btn-save-cfg">儲存並立即同步</button>
+  </div>
+</div>
+
+<!-- 大圖預覽 -->
+<div id="modal-img" class="modal">
+  <div class="modal-box" style="text-align:center; max-width:94vw;">
+    <img id="big-img" src="" style="max-width:100%; max-height:78vh; border-radius:8px;" />
+    <div style="margin-top:8px; font-size:13px; color:#64748b;">點擊任意處關閉</div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const DB_KEY = "ktt_micron_simple_log_v1";
+  const URL_KEY = "ktt_micron_sheet_url_v1";
+
+  let records = [];
+  let selectedCat = "SPECIAL";
+  let draftPhotos = [];
+  let currentFilter = "OPEN";
+  let editingId = null;
+  let editPhotos = [];
+
+  function loadLocal() {
+    try {
+      records = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+    } catch (_) {
+      records = [];
+    }
+  }
+
+  function saveLocal() {
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify(records));
+    } catch (_) {}
+  }
+
+  function getSheetUrl() {
+    return (localStorage.getItem(URL_KEY) || "").trim();
+  }
+
+  function setStatus(txt) {
+    document.getElementById("sheet-status").textContent = txt;
+  }
+
+  async function syncFromSheet() {
+    loadLocal();
+    render();
+    const url = getSheetUrl();
+    if (!url) {
+      setStatus("尚未綁定試算表（點右上角貼上網址）");
+      return;
+    }
+    try {
+      setStatus("正在從 Google 試算表讀取...");
+      const res = await fetch(url, { cache: "no-store" });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.records)) {
+        if (data.records.length > 0) {
+          records = data.records;
+          saveLocal();
+          render();
+        } else if (records.length > 0) {
+          await pushToSheet(url);
+        }
+        setStatus("已連線 Google 試算表（即時同步）");
+      } else {
+        throw new Error("格式異常");
+      }
+    } catch (_) {
+      setStatus("試算表連線失敗（目前暫存於手機本機）");
+    }
+  }
+
+  async function pushToSheet(url) {
+    setStatus("正在寫入 Google 試算表與 Drive...");
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ records: records })
+    });
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.records)) {
+      records = data.records;
+      saveLocal();
+      render();
+      setStatus("已連線 Google 試算表（即時同步）");
+    } else {
+      throw new Error(data.error || "寫入失敗");
+    }
+  }
+
+  async function save() {
+    saveLocal();
+    render();
+    const url = getSheetUrl();
+    if (!url) return;
+    try {
+      await pushToSheet(url);
+    } catch (err) {
+      setStatus("寫入試算表失敗，已先存於本機");
+      toast("同步失敗：" + (err.message || "請檢查網址"));
+    }
+  }
+
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.style.display = "block";
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.display = "none"; }, 2400);
+  }
+
+  function esc(s) {
+    return String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+  }
+
+  function nowStr() {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${mm}/${dd} ${hh}:${mi}`;
+  }
+
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 960;
+          let w = img.width, h = img.height;
+          if (w > max || h > max) {
+            if (w > h) { h = Math.round(h * max / w); w = max; }
+            else { w = Math.round(w * max / h); h = max; }
+          }
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL("image/jpeg", 0.68));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderDraftThumbs() {
+    document.getElementById("in-thumbs").innerHTML = draftPhotos.map((src, i) => `
+      <div class="thumb">
+        <img src="${src}" data-big="${src}" />
+        <button type="button" class="thumb-del" data-del-draft="${i}">×</button>
+      </div>
+    `).join("");
+  }
+
+  function render() {
+    const q = document.getElementById("q-text").value.trim().toLowerCase();
+
+    const openCnt = records.filter(r => !r.done).length;
+    const urgCnt = records.filter(r => !r.done && r.urgent).length;
+    const doneCnt = records.filter(r => r.done).length;
+    document.getElementById("cnt-open").textContent = openCnt;
+    document.getElementById("cnt-urg").textContent = urgCnt;
+    document.getElementById("cnt-done").textContent = doneCnt;
+    document.getElementById("cnt-all").textContent = records.length;
+
+    const catText = { SPECIAL: "🔴 特殊", RETURN: "🟠 退貨", NEW: "🟢 新品", GENERAL: "🔵 一般" };
+
+    const filtered = records
+      .filter(r => {
+        if (currentFilter === "OPEN" && r.done) return false;
+        if (currentFilter === "URGENT" && (r.done || !r.urgent)) return false;
+        if (currentFilter === "DONE" && !r.done) return false;
+        if (q) {
+          const text = `${r.nrs} ${r.passNo || ""} ${r.plant} ${r.part} ${r.note}`.toLowerCase();
+          if (!text.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
+        return b.ts - a.ts;
+      });
+
+    const area = document.getElementById("list-area");
+    if (!filtered.length) {
+      area.innerHTML = `<div style="text-align:center;color:#64748b;padding:28px;font-size:14px;">目前沒有符合的紀錄</div>`;
+      return;
+    }
+
+    area.innerHTML = filtered.map(r => `
+      <div class="item ${r.urgent && !r.done ? "urgent" : ""} ${r.done ? "done" : ""}">
+        <div class="item-top">
+          <div class="badges">
+            ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
+            ${r.nrs ? `<span class="b b-nrs">NRS ${esc(r.nrs)}</span>` : `<span class="b b-nonrs">待補單號</span>`}
+            ${r.passNo ? `<span class="b b-pass">放行 ${esc(r.passNo)}</span>` : ""}
+            <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
+            <span class="b ${r.done ? "b-st-done" : "b-st-open"}">${r.done ? "✅ 已回貨" : "⏳ 未回貨"}</span>
+          </div>
+          <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
+        </div>
+
+        <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
+        <div class="item-sub">
+          建檔：${esc(r.createdAt)}${r.doneAt ? ` ｜ 回貨：${esc(r.doneAt)}` : ""}
+          ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
+        </div>
+
+        ${r.photos && r.photos.length ? `
+          <div class="thumbs" style="margin-bottom:4px;">
+            ${r.photos.map(p => `<div class="thumb"><img src="${p}" data-big="${p}" /></div>`).join("")}
+          </div>
+        ` : ""}
+
+        <div class="item-actions">
+          ${!r.done
+            ? `<button type="button" class="btn-done" data-done-id="${r.id}">✅ 已回貨點交</button>`
+            : `<button type="button" class="btn-add-photo" data-reopen-id="${r.id}">↩ 改回未回貨</button>`
+          }
+          <button type="button" class="btn-add-photo" data-edit-id="${r.id}">📎 補單號 / 照片</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  document.getElementById("cat-pills").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-cat]");
+    if (!btn) return;
+    selectedCat = btn.dataset.cat;
+    const cls = { SPECIAL: "on-red", RETURN: "on-amber", NEW: "on-green", GENERAL: "on-blue" };
+    document.querySelectorAll("#cat-pills .pill").forEach(p => {
+      p.className = "pill" + (p.dataset.cat === selectedCat ? " " + cls[selectedCat] : "");
+    });
+  });
+
+  document.getElementById("in-file").addEventListener("change", async (e) => {
+    for (const f of e.target.files) {
+      draftPhotos.push(await compressImage(f));
+    }
+    e.target.value = "";
+    renderDraftThumbs();
+  });
+
+  document.getElementById("in-thumbs").addEventListener("click", (e) => {
+    const del = e.target.closest("[data-del-draft]");
+    if (del) {
+      draftPhotos.splice(Number(del.dataset.delDraft), 1);
+      renderDraftThumbs();
+    }
+  });
+
+  document.getElementById("btn-save").addEventListener("click", async () => {
+    const nrs = document.getElementById("in-nrs").value.trim();
+    const passNo = document.getElementById("in-pass").value.trim();
+    const plant = document.getElementById("in-plant").value.trim() || "美光 F16";
+    const part = document.getElementById("in-part").value.trim();
+    const note = document.getElementById("in-note").value.trim();
+    const urgent = document.getElementById("in-urgent").checked;
+
+    if (!part && !nrs && !passNo && !draftPhotos.length) {
+      alert("請至少輸入「工件名稱」、「NRS單號」、「放行單號」或「拍一張照片」");
+      return;
+    }
+
+    if (nrs && records.some(r => r.nrs === nrs)) {
+      if (!confirm(`單號 NRS ${nrs} 已經記過了，確定還要新增一筆嗎？`)) return;
+    }
+
+    records.unshift({
+      id: "R" + Date.now(),
+      ts: Date.now(),
+      cat: selectedCat,
+      urgent,
+      nrs,
+      passNo,
+      plant,
+      part: part || "未填工件名稱（見照片）",
+      note,
+      photos: [...draftPhotos],
+      done: false,
+      createdAt: nowStr(),
+      doneAt: ""
+    });
+
+    document.getElementById("in-nrs").value = "";
+    document.getElementById("in-pass").value = "";
+    document.getElementById("in-part").value = "";
+    document.getElementById("in-note").value = "";
+    document.getElementById("in-urgent").checked = false;
+    draftPhotos = [];
+    renderDraftThumbs();
+    await save();
+    toast("✅ 已儲存紀錄");
+  });
+
+  document.querySelector(".filter-row").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-filter]");
+    if (!btn) return;
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll(".f-tab").forEach(t => t.classList.toggle("active", t.dataset.filter === currentFilter));
+    render();
+  });
+
+  document.getElementById("q-text").addEventListener("input", render);
+
+  document.getElementById("list-area").addEventListener("click", async (e) => {
+    const doneBtn = e.target.closest("[data-done-id]");
+    if (doneBtn) {
+      const id = doneBtn.dataset.doneId;
+      records = records.map(r => r.id === id ? { ...r, done: true, doneAt: nowStr() } : r);
+      await save();
+      toast("✅ 已標記回貨完成");
+      return;
+    }
+
+    const reopenBtn = e.target.closest("[data-reopen-id]");
+    if (reopenBtn) {
+      const id = reopenBtn.dataset.reopenId;
+      records = records.map(r => r.id === id ? { ...r, done: false, doneAt: "" } : r);
+      await save();
+      toast("↩ 已改回未回貨");
+      return;
+    }
+
+    const delBtn = e.target.closest("[data-del-id]");
+    if (delBtn) {
+      if (!confirm("確定刪除這筆紀錄？")) return;
+      records = records.filter(r => r.id !== delBtn.dataset.delId);
+      await save();
+      toast("已刪除");
+      return;
+    }
+
+    const editBtn = e.target.closest("[data-edit-id]");
+    if (editBtn) {
+      const r = records.find(x => x.id === editBtn.dataset.editId);
+      if (!r) return;
+      editingId = r.id;
+      editPhotos = [...(r.photos || [])];
+      document.getElementById("edit-nrs").value = r.nrs || "";
+      document.getElementById("edit-pass").value = r.passNo || "";
+      document.getElementById("edit-note").value = r.note || "";
+      document.getElementById("edit-thumbs").innerHTML = editPhotos.map(p => `<div class="thumb"><img src="${p}" /></div>`).join("");
+      document.getElementById("modal-edit").classList.add("open");
+    }
+  });
+
+  document.getElementById("edit-file").addEventListener("change", async (e) => {
+    for (const f of e.target.files) {
+      editPhotos.push(await compressImage(f));
+    }
+    e.target.value = "";
+    document.getElementById("edit-thumbs").innerHTML = editPhotos.map(p => `<div class="thumb"><img src="${p}" /></div>`).join("");
+  });
+
+  document.getElementById("btn-save-edit").addEventListener("click", async () => {
+    const newNrs = document.getElementById("edit-nrs").value.trim();
+    const newPass = document.getElementById("edit-pass").value.trim();
+    const newNote = document.getElementById("edit-note").value.trim();
+    records = records.map(r => r.id === editingId ? { ...r, nrs: newNrs, passNo: newPass, note: newNote, photos: editPhotos } : r);
+    document.getElementById("modal-edit").classList.remove("open");
+    await save();
+    toast("📎 已更新單號與照片");
+  });
+
+  document.getElementById("btn-close-edit").addEventListener("click", () => {
+    document.getElementById("modal-edit").classList.remove("open");
+  });
+
+  document.getElementById("btn-open-cfg").addEventListener("click", () => {
+    document.getElementById("cfg-url").value = getSheetUrl();
+    document.getElementById("modal-cfg").classList.add("open");
+  });
+
+  document.getElementById("btn-close-cfg").addEventListener("click", () => {
+    document.getElementById("modal-cfg").classList.remove("open");
+  });
+
+  document.getElementById("btn-save-cfg").addEventListener("click", async () => {
+    const u = document.getElementById("cfg-url").value.trim();
+    localStorage.setItem(URL_KEY, u);
+    document.getElementById("modal-cfg").classList.remove("open");
+    await syncFromSheet();
+    toast("已儲存試算表設定");
+  });
+
+  document.addEventListener("click", (e) => {
+    const img = e.target.closest("[data-big]");
+    if (img) {
+      document.getElementById("big-img").src = img.dataset.big;
+      document.getElementById("modal-img").classList.add("open");
+    }
+  });
+  document.getElementById("modal-img").addEventListener("click", () => {
+    document.getElementById("modal-img").classList.remove("open");
+  });
+
+  syncFromSheet();
+})();
+</script>
+</body>
+</html>
