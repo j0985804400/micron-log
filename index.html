@@ -1,156 +1,904 @@
-const SHEET_NAME = "美光紀錄";
-const DRIVE_FOLDER_ID = "1k76WwFQM_aJ5fCNgdhMAZEaUKEgDEg8z";
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>科治新技｜后里美光線・特殊工件隨手記</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --blue: #1d4ed8;
+      --red: #dc2626;
+      --green: #059669;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Segoe UI", sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 48px; }
+    button { cursor: pointer; border: none; border-radius: 10px; font-weight: 700; transition: 0.12s; touch-action: manipulation; }
+    button:active { transform: scale(0.97); }
+    input {
+      width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 16px; background: #fff; color: var(--text);
+    }
+    input:focus { outline: none; border-color: var(--blue); }
 
-function doGet() {
-  const sheet = getOrCreateSheet_();
-  const rows = sheet.getDataRange().getValues();
-  const records = [];
-  for (let i = 1; i < rows.length; i++) {
-    const rawJson = rows[i][1];
-    if (!rawJson) continue;
+    .header {
+      background: #0f172a; color: #fff; padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .header-title { font-size: 16px; font-weight: 800; letter-spacing: 0.3px; }
+    .header-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .btn-cfg { background: #334155; color: #f8fafc; padding: 7px 11px; font-size: 12px; border-radius: 8px; }
+
+    .wrap { max-width: 580px; margin: 0 auto; padding: 12px; }
+
+    .box {
+      background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 14px;
+      border: 1.5px solid #e2e8f0; box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+    }
+    .sec-title { font-size: 15px; font-weight: 800; color: var(--blue); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .pill {
+      padding: 8px 12px; font-size: 14px; border: 1.5px solid var(--border);
+      background: #f8fafc; color: #334155; border-radius: 9px;
+    }
+    .pill.on-red { background: var(--red); color: #fff; border-color: var(--red); }
+    .pill.on-amber { background: #d97706; color: #fff; border-color: #d97706; }
+    .pill.on-green { background: var(--green); color: #fff; border-color: #059669; }
+    .pill.on-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    .photo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
+    .btn-cam {
+      flex: 1 1 150px; background: #eff6ff; color: var(--blue); border: 1.5px dashed #93c5fd;
+      padding: 11px; font-size: 13px; text-align: center; border-radius: 10px; font-weight: 700; cursor: pointer;
+    }
+    .btn-album {
+      flex: 1 1 150px; background: #f0fdf4; color: #15803d; border: 1.5px dashed #86efac;
+      padding: 11px; font-size: 13px; text-align: center; border-radius: 10px; font-weight: 700; cursor: pointer;
+    }
+    .btn-ocr {
+      background: #fef3c7; color: #92400e; border: 1.5px solid #f59e0b;
+      padding: 11px 12px; font-size: 13px; border-radius: 10px; white-space: nowrap;
+    }
+    .btn-ocr:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .ocr-hint {
+      display: none; background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 10px;
+      padding: 9px 11px; margin-bottom: 10px; font-size: 13px; color: #78350f;
+    }
+    .ocr-hint.show { display: block; }
+    .ocr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .ocr-chip {
+      background: #ffffff; border: 1.5px solid #f59e0b; color: #92400e;
+      padding: 5px 9px; border-radius: 8px; font-size: 12px; font-weight: 800;
+    }
+
+    .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .thumb { position: relative; width: 76px; height: 76px; }
+    .thumb img { width: 76px; height: 76px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: zoom-in; background: #e2e8f0; }
+    .thumb-del {
+      position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+      background: var(--red); color: #fff; font-size: 13px; padding: 0; line-height: 1;
+    }
+
+    .btn-save { width: 100%; background: var(--blue); color: #fff; padding: 13px; font-size: 16px; border-radius: 11px; }
+
+    .filter-row { display: flex; gap: 6px; margin-top: 8px; }
+    .f-tab { flex: 1; padding: 8px 6px; font-size: 13px; background: #e2e8f0; color: #334155; border-radius: 8px; }
+    .f-tab.active { background: #0f172a; color: #fff; }
+
+    .item {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 10px;
+    }
+    .item.urgent { border-left: 6px solid var(--red); background: #fffafa; }
+    .item-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .b { font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+    .b-nrs { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; font-family: monospace; font-size: 13px; }
+    .b-pass { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; font-family: monospace; font-size: 13px; }
+    .b-nonrs { background: #fee2e2; color: #b91c1c; border: 1px dashed #ef4444; }
+    .b-urg { background: var(--red); color: #fff; }
+    .b-cat-SPECIAL { background: #fee2e2; color: #b91c1c; }
+    .b-cat-RETURN { background: #ffedd5; color: #c2410c; }
+    .b-cat-NEW { background: #dcfce7; color: #15803d; }
+    .b-cat-GENERAL { background: #dbeafe; color: #1e40af; }
+
+    .item-main { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .item-sub { font-size: 13px; color: #475569; margin-bottom: 6px; }
+    .item-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-add-photo { width: 100%; background: #f1f5f9; color: #1e293b; border: 1.5px solid var(--border); padding: 10px; font-size: 13px; }
+    .btn-del { background: transparent; color: #94a3b8; font-size: 12px; padding: 4px 6px; }
+
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.82);
+      z-index: 50; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 14px; padding: 16px; width: 100%; max-width: 420px; }
+    .img-modal-box {
+      background: #0f172a; color: #fff; border-radius: 14px; padding: 12px;
+      width: 100%; max-width: 96vw; text-align: center;
+    }
+    .img-modal-box img {
+      display: block; margin: 0 auto; max-width: 100%; max-height: 74vh;
+      object-fit: contain; border-radius: 8px; background: #1e293b;
+    }
+    .img-fallback-msg {
+      display: none; margin: 12px auto 4px; padding: 14px 12px; border-radius: 10px;
+      background: #1e293b; color: #f8fafc; font-size: 13px; line-height: 1.5; border: 1px dashed #64748b;
+    }
+    .img-fallback-msg.show { display: block; }
+    .img-modal-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px;
+    }
+    .btn-open-orig {
+      display: inline-block; background: #2563eb; color: #fff; text-decoration: none;
+      padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    }
+    .btn-retry-img {
+      background: #0f766e; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    }
+    .btn-close-img {
+      background: #334155; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13px;
+    }
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #0f172a; color: #fff; padding: 10px 18px; border-radius: 99px;
+      font-size: 13px; font-weight: 700; display: none; z-index: 90;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🚚 科治新技｜后里美光線</div>
+    <div class="header-sub" id="sheet-status">尚未綁定試算表（點右上角貼上網址）</div>
+  </div>
+  <button type="button" class="btn-cfg" id="btn-open-cfg">試算表設定</button>
+</div>
+
+<div class="wrap">
+  <div class="box">
+    <div class="sec-title">
+      <span>＋ 記一筆工件</span>
+      <label style="font-size:13px; color:var(--red); display:flex; align-items:center; gap:5px; cursor:pointer;">
+        <input type="checkbox" id="in-urgent" style="width:18px; height:18px;" /> 🚨 客戶急件
+      </label>
+    </div>
+
+    <div class="pills" id="cat-pills">
+      <button type="button" class="pill on-red" data-cat="SPECIAL">🔴 特殊</button>
+      <button type="button" class="pill" data-cat="RETURN">🟠 退貨</button>
+      <button type="button" class="pill" data-cat="NEW">🟢 新品</button>
+      <button type="button" class="pill" data-cat="GENERAL">🔵 一般</button>
+    </div>
+
+    <div class="row2">
+      <div>
+        <span class="label">No. NRS 單號（6碼）</span>
+        <input type="text" id="in-nrs" inputmode="numeric" placeholder="例：063412" />
+      </div>
+      <div>
+        <span class="label">放行單號（8開頭共7碼）</span>
+        <input type="text" id="in-pass" inputmode="numeric" placeholder="例：8354299" />
+      </div>
+    </div>
+
+    <div id="in-ocr-hint" class="ocr-hint"></div>
+
+    <div class="row2">
+      <div>
+        <span class="label">廠區 / 客戶</span>
+        <input type="text" id="in-plant" value="美光 F16" />
+      </div>
+      <div>
+        <span class="label">機台 / 工件名稱 / 料號 *</span>
+        <input type="text" id="in-part" />
+      </div>
+    </div>
+
+    <div>
+      <span class="label">備註</span>
+      <input type="text" id="in-note" placeholder="補充說明..." />
+    </div>
+
+    <div class="photo-bar">
+      <label class="btn-cam">
+        📷 直接拍照
+        <input type="file" id="in-cam-file" accept="image/*" capture="environment" multiple style="display:none;" />
+      </label>
+      <label class="btn-album">
+        🖼️ 從相簿選圖
+        <input type="file" id="in-album-file" accept="image/*" multiple style="display:none;" />
+      </label>
+      <button type="button" class="btn-ocr" id="btn-in-ocr">🔍 辨識單號</button>
+    </div>
+    <div id="in-thumbs" class="thumbs"></div>
+
+    <button type="button" class="btn-save" id="btn-save">💾 儲存這筆紀錄</button>
+  </div>
+
+  <div class="box" style="padding:12px;">
+    <input type="text" id="q-text" placeholder="🔍 搜尋 NRS單號、放行單號、工件名稱、料號或備註..." />
+    <div class="filter-row">
+      <button type="button" class="f-tab active" data-filter="ALL">全部 (<span id="cnt-all">0</span>)</button>
+      <button type="button" class="f-tab" data-filter="URGENT">🚨 急件 (<span id="cnt-urg">0</span>)</button>
+    </div>
+  </div>
+
+  <div id="list-area"></div>
+</div>
+
+<!-- 補單號 / 補拍照片小視窗 -->
+<div id="modal-edit" class="modal">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <strong style="font-size:16px;">📎 補單號 / 補拍照片</strong>
+      <button type="button" id="btn-close-edit" style="background:#e2e8f0; padding:5px 10px;">✕</button>
+    </div>
+    <div class="row2">
+      <div>
+        <span class="label">No. NRS 單號（6碼）</span>
+        <input type="text" id="edit-nrs" inputmode="numeric" placeholder="例：063412" />
+      </div>
+      <div>
+        <span class="label">放行單號（8開頭共7碼）</span>
+        <input type="text" id="edit-pass" inputmode="numeric" placeholder="例：8354299" />
+      </div>
+    </div>
+    <div id="edit-ocr-hint" class="ocr-hint"></div>
+    <div style="margin-bottom:10px;">
+      <span class="label">追加備註</span>
+      <input type="text" id="edit-note" placeholder="例：已補拍放行單" />
+    </div>
+    <div style="margin-bottom:12px;">
+      <div class="photo-bar" style="margin-top:0; margin-bottom:0;">
+        <label class="btn-cam">
+          📷 補拍照
+          <input type="file" id="edit-cam-file" accept="image/*" capture="environment" multiple style="display:none;" />
+        </label>
+        <label class="btn-album">
+          🖼️ 相簿補圖
+          <input type="file" id="edit-album-file" accept="image/*" multiple style="display:none;" />
+        </label>
+        <button type="button" class="btn-ocr" id="btn-edit-ocr">🔍 辨識</button>
+      </div>
+      <div id="edit-thumbs" class="thumbs" style="margin-top:8px;"></div>
+    </div>
+    <button type="button" class="btn-save" id="btn-save-edit">確認更新</button>
+  </div>
+</div>
+
+<!-- Google 試算表網址設定視窗 -->
+<div id="modal-cfg" class="modal">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <strong style="font-size:16px;">Google 試算表同步設定</strong>
+      <button type="button" id="btn-close-cfg" style="background:#e2e8f0; padding:5px 10px;">✕</button>
+    </div>
+    <p style="font-size:12px; color:#475569; margin-top:0; line-height:1.5;">
+      貼上試算表 Apps Script 部署後的 <code>/exec</code> 網址，紀錄會自動寫入試算表，照片會集中存進「科治新技_后里美光線_工件照片集」資料夾。
+    </p>
+    <div style="margin-bottom:12px;">
+      <span class="label">Apps Script Web App 網址</span>
+      <input type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec" />
+    </div>
+    <button type="button" class="btn-save" id="btn-save-cfg">儲存並立即同步</button>
+  </div>
+</div>
+
+<!-- 大圖預覽 -->
+<div id="modal-img" class="modal">
+  <div class="img-modal-box" id="img-modal-card">
+    <img id="big-img" src="" alt="放大照片" />
+    <div id="img-fallback-msg" class="img-fallback-msg">
+      預覽圖目前無法直接顯示（可能仍在產生縮圖或受到瀏覽器限制），請點下方「開 Drive 原圖」檢視。
+    </div>
+    <div class="img-modal-actions">
+      <button type="button" class="btn-retry-img" id="btn-retry-img">重新載入</button>
+      <a id="btn-open-orig" class="btn-open-orig" href="#" target="_blank" rel="noopener noreferrer">開 Drive 原圖</a>
+      <button type="button" class="btn-close-img" id="btn-close-img">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const DB_KEY = "ktt_micron_simple_log_v1";
+  const URL_KEY = "ktt_micron_sheet_url_v1";
+  const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbx4qJQwzNN7P8ILy502bZEcgkwumNBN7SJGjFjb-MmCbZpZ2Te4pMjhO4-MlRxcYRr4/exec";
+
+  let records = [];
+  let selectedCat = "SPECIAL";
+  let draftPhotos = [];
+  let currentFilter = "ALL";
+  let editingId = null;
+  let editPhotos = [];
+
+  function extractDriveId(url) {
+    if (typeof url !== "string") return "";
+    const m1 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m1) return m1[1];
+    const m2 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    return m2 ? m2[1] : "";
+  }
+
+  function buildPhotoCandidates(url) {
+    if (typeof url !== "string" || !url) return [];
+    if (url.startsWith("data:image/")) return [url];
+    const driveId = extractDriveId(url);
+    if (!driveId) return [url];
+    const ts = Date.now();
+    return [
+      `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600&t=${ts}`,
+      `https://drive.google.com/uc?export=view&id=${driveId}&t=${ts}`,
+      `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000&t=${ts}`
+    ];
+  }
+
+  function toThumbSrc(url) {
+    if (typeof url !== "string" || !url) return "";
+    if (url.startsWith("data:image/")) return url;
+    const driveId = extractDriveId(url);
+    if (driveId) return `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+    return url;
+  }
+
+  function toDriveViewUrl(url) {
+    if (typeof url !== "string" || !url) return "#";
+    const driveId = extractDriveId(url);
+    if (driveId) return `https://drive.google.com/file/d/${driveId}/view`;
+    return url;
+  }
+
+  function loadLocal() {
     try {
-      records.push(JSON.parse(rawJson));
-    } catch (_) {}
-  }
-  return jsonOut_({ ok: true, records: records });
-}
-
-function doPost(e) {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    const body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
-    const incoming = Array.isArray(body.records) ? body.records : [];
-
-    const normalized = incoming.map(function (rec, idx) {
-      const copy = Object.assign({}, rec);
-      const rawPhotos = Array.isArray(copy.photos) ? copy.photos : [];
-      copy.photos = rawPhotos.map(function (p, pIdx) {
-        if (typeof p === "string" && p.indexOf("data:image/") === 0) {
-          return saveBase64ToDrive_(p, copy.id || ("R" + Date.now()), idx + 1, pIdx + 1);
-        }
-        return p;
-      }).filter(function (u) {
-        return typeof u === "string" && u.length > 0;
-      });
-      return copy;
-    });
-
-    cleanupUnusedDrivePhotos_(normalized);
-    writeRecordsToSheet_(normalized);
-
-    return jsonOut_({ ok: true, records: normalized });
-  } catch (err) {
-    return jsonOut_({ ok: false, error: err && err.message ? err.message : String(err) });
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function saveBase64ToDrive_(dataUrl, recId, recSeq, photoSeq) {
-  const parts = dataUrl.split(",");
-  if (parts.length < 2) return "";
-  const mimeMatch = parts[0].match(/data:(image\/[a-zA-Z0-9.+-]+);base64/);
-  const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
-  const ext = mimeType.indexOf("png") >= 0 ? "png" : "jpg";
-  const bytes = Utilities.base64Decode(parts[1]);
-  const tz = Session.getScriptTimeZone() || "Asia/Taipei";
-  const stamp = Utilities.formatDate(new Date(), tz, "yyyyMMdd_HHmmss");
-  const safeId = String(recId || "REC").replace(/[^a-zA-Z0-9_-]/g, "");
-  const fileName = `${safeId}_${stamp}_${recSeq}_${photoSeq}.${ext}`;
-  const blob = Utilities.newBlob(bytes, mimeType, fileName);
-
-  const folder = getTargetFolder_();
-  const file = folder.createFile(blob);
-  try {
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  } catch (_) {}
-
-  return `https://drive.google.com/file/d/${file.getId()}/view?usp=drivesdk`;
-}
-
-function cleanupUnusedDrivePhotos_(activeRecords) {
-  const activeIds = {};
-  (activeRecords || []).forEach(function (rec) {
-    const photos = Array.isArray(rec && rec.photos) ? rec.photos : [];
-    photos.forEach(function (url) {
-      const id = extractDriveFileId_(url);
-      if (id) activeIds[id] = true;
-    });
-  });
-
-  const folder = getTargetFolder_();
-  const files = folder.getFiles();
-  while (files.hasNext()) {
-    const file = files.next();
-    if (file.isTrashed()) continue;
-    const fileId = file.getId();
-    if (!activeIds[fileId]) {
-      file.setTrashed(true);
+      records = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+    } catch (_) {
+      records = [];
     }
   }
-}
 
-function extractDriveFileId_(url) {
-  if (typeof url !== "string" || !url) return "";
-  const m1 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (m1) return m1[1];
-  const m2 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  return m2 ? m2[1] : "";
-}
-
-function getTargetFolder_() {
-  if (DRIVE_FOLDER_ID && DRIVE_FOLDER_ID.trim()) {
+  function saveLocal() {
     try {
-      return DriveApp.getFolderById(DRIVE_FOLDER_ID.trim());
+      localStorage.setItem(DB_KEY, JSON.stringify(records));
     } catch (_) {}
   }
-  return DriveApp.getRootFolder();
-}
 
-function getOrCreateSheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
+  function getSheetUrl() {
+    const saved = (localStorage.getItem(URL_KEY) || "").trim();
+    return saved || DEFAULT_SHEET_URL;
   }
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["更新時間", "紀錄JSON", "NRS單號", "放行單號", "廠區", "工件名稱", "急件", "類別", "備註", "照片連結"]);
+
+  function setStatus(txt) {
+    document.getElementById("sheet-status").textContent = txt;
   }
-  return sheet;
-}
 
-function writeRecordsToSheet_(records) {
-  const sheet = getOrCreateSheet_();
-  const tz = Session.getScriptTimeZone() || "Asia/Taipei";
-  const nowStr = Utilities.formatDate(new Date(), tz, "yyyy/MM/dd HH:mm:ss");
+  async function syncFromSheet() {
+    loadLocal();
+    render();
+    const url = getSheetUrl();
+    if (!url) {
+      setStatus("尚未綁定試算表（點右上角貼上網址）");
+      return;
+    }
+    try {
+      setStatus("正在從 Google 試算表讀取...");
+      const res = await fetch(url, { cache: "no-store" });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.records)) {
+        if (data.records.length > 0) {
+          records = data.records;
+          saveLocal();
+          render();
+        } else if (records.length > 0) {
+          await pushToSheet(url);
+        }
+        setStatus("已連線 Google 試算表（集中存照片集・即時同步）");
+      } else {
+        throw new Error("格式異常");
+      }
+    } catch (_) {
+      setStatus("試算表連線失敗（目前暫存於手機本機）");
+    }
+  }
 
-  const rows = records.map(function (r) {
-    return [
-      nowStr,
-      JSON.stringify(r),
-      r.nrs || "",
-      r.passNo || "",
-      r.plant || "",
-      r.part || "",
-      r.urgent ? "急件" : "",
-      r.cat || "",
-      r.note || "",
-      Array.isArray(r.photos) ? r.photos.join("\n") : ""
-    ];
+  async function pushToSheet(url) {
+    setStatus("正在寫入 Google 試算表與照片集...");
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ records: records })
+    });
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.records)) {
+      records = data.records;
+      saveLocal();
+      render();
+      setStatus("已連線 Google 試算表（集中存照片集・即時同步）");
+    } else {
+      throw new Error(data.error || "寫入失敗");
+    }
+  }
+
+  async function save() {
+    saveLocal();
+    render();
+    const url = getSheetUrl();
+    if (!url) return;
+    try {
+      await pushToSheet(url);
+    } catch (err) {
+      setStatus("寫入試算表失敗，已先存於本機");
+      toast("同步失敗：" + (err.message || "請檢查網址"));
+    }
+  }
+
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.style.display = "block";
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.display = "none"; }, 2600);
+  }
+
+  function esc(s) {
+    return String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+  }
+
+  function nowStr() {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${mm}/${dd} ${hh}:${mi}`;
+  }
+
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1600;
+          let w = img.width, h = img.height;
+          if (w > max || h > max) {
+            if (w > h) { h = Math.round(h * max / w); w = max; }
+            else { w = Math.round(w * max / h); h = max; }
+          }
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL("image/jpeg", 0.85));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function detectNumbersFromPhotos(photoList, mode) {
+    const hintEl = document.getElementById(mode === "in" ? "in-ocr-hint" : "edit-ocr-hint");
+    const nrsInput = document.getElementById(mode === "in" ? "in-nrs" : "edit-nrs");
+    const passInput = document.getElementById(mode === "in" ? "in-pass" : "edit-pass");
+    const btnOcr = document.getElementById(mode === "in" ? "btn-in-ocr" : "btn-edit-ocr");
+
+    const base64Photos = (photoList || []).filter(p => typeof p === "string" && p.startsWith("data:image/"));
+    if (!base64Photos.length) {
+      toast("請先拍照或從相簿選一張照片");
+      return;
+    }
+
+    const url = getSheetUrl();
+    if (!url) {
+      toast("尚未設定試算表網址");
+      return;
+    }
+
+    btnOcr.disabled = true;
+    hintEl.classList.add("show");
+    hintEl.innerHTML = "⏳ 正在偵測照片中的 <b>No. NRS (6碼)</b> 與 <b>8開頭 (7碼)</b> 單號...";
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "ocr",
+          photos: base64Photos
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "辨識失敗");
+
+      const nrsList = Array.isArray(data.nrsList) ? data.nrsList : (data.nrs ? [data.nrs] : []);
+      const passList = Array.isArray(data.passList) ? data.passList : (data.passNo ? [data.passNo] : []);
+
+      if (nrsList.length === 1 && !nrsInput.value.trim()) {
+        nrsInput.value = nrsList[0];
+      }
+      if (passList.length === 1 && !passInput.value.trim()) {
+        passInput.value = passList[0];
+      }
+
+      if (!nrsList.length && !passList.length) {
+        hintEl.innerHTML = "⚠️ 未偵測到符合的 <b>NRS+6碼</b> 或 <b>8+6碼</b>，請確認拍攝清晰度或手動輸入。";
+        return;
+      }
+
+      const chips = [];
+      nrsList.forEach(num => {
+        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-nrs" data-fill-val="${esc(num)}">填入 NRS：${esc(num)}</button>`);
+      });
+      passList.forEach(num => {
+        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-pass" data-fill-val="${esc(num)}">填入單號：${esc(num)}</button>`);
+      });
+
+      hintEl.innerHTML = `<div>✨ 偵測結果（點按鈕可一鍵套用）：</div><div class="ocr-chips">${chips.join("")}</div>`;
+      toast("✨ 單號偵測完成");
+    } catch (err) {
+      hintEl.innerHTML = `⚠️ 單號偵測失敗：${esc(err.message || "請檢查 Apps Script 是否已設定 GEMINI_API_KEY 並部署新版本")}`;
+    } finally {
+      btnOcr.disabled = false;
+    }
+  }
+
+  document.addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-fill-target]");
+    if (chip) {
+      const el = document.getElementById(chip.dataset.fillTarget);
+      if (el) {
+        el.value = chip.dataset.fillVal;
+        toast("✅ 已填入 " + chip.dataset.fillVal);
+      }
+    }
   });
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow > 1) {
-    sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent();
+  function renderThumbHtml(rawUrl) {
+    const thumbSrc = esc(toThumbSrc(rawUrl));
+    const origHref = esc(toDriveViewUrl(rawUrl));
+    const rawEnc = esc(rawUrl);
+    return `<div class="thumb"><img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" /></div>`;
   }
-  if (rows.length > 0) {
-    sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
-  }
-}
 
-function jsonOut_(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+  function renderDraftThumbs() {
+    document.getElementById("in-thumbs").innerHTML = draftPhotos.map((src, i) => {
+      const thumbSrc = esc(toThumbSrc(src));
+      const origHref = esc(toDriveViewUrl(src));
+      const rawEnc = esc(src);
+      return `
+        <div class="thumb">
+          <img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" />
+          <button type="button" class="thumb-del" data-del-draft="${i}">×</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function render() {
+    const q = document.getElementById("q-text").value.trim().toLowerCase();
+
+    const urgCnt = records.filter(r => r.urgent).length;
+    document.getElementById("cnt-all").textContent = records.length;
+    document.getElementById("cnt-urg").textContent = urgCnt;
+
+    const catText = { SPECIAL: "🔴 特殊", RETURN: "🟠 退貨", NEW: "🟢 新品", GENERAL: "🔵 一般" };
+
+    const filtered = records
+      .filter(r => {
+        if (currentFilter === "URGENT" && !r.urgent) return false;
+        if (q) {
+          const text = `${r.nrs} ${r.passNo || ""} ${r.plant} ${r.part} ${r.note}`.toLowerCase();
+          if (!text.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
+        return b.ts - a.ts;
+      });
+
+    const area = document.getElementById("list-area");
+    if (!filtered.length) {
+      area.innerHTML = `<div style="text-align:center;color:#64748b;padding:28px;font-size:14px;">目前沒有符合的紀錄</div>`;
+      return;
+    }
+
+    area.innerHTML = filtered.map(r => `
+      <div class="item ${r.urgent ? "urgent" : ""}">
+        <div class="item-top">
+          <div class="badges">
+            ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
+            ${r.nrs ? `<span class="b b-nrs">NRS ${esc(r.nrs)}</span>` : `<span class="b b-nonrs">待補單號</span>`}
+            ${r.passNo ? `<span class="b b-pass">放行 ${esc(r.passNo)}</span>` : ""}
+            <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
+          </div>
+          <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
+        </div>
+
+        <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
+        <div class="item-sub">
+          建檔：${esc(r.createdAt)}
+          ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
+        </div>
+
+        ${r.photos && r.photos.length ? `
+          <div class="thumbs" style="margin-bottom:4px;">
+            ${r.photos.map(p => renderThumbHtml(p)).join("")}
+          </div>
+        ` : ""}
+
+        <div class="item-actions">
+          <button type="button" class="btn-add-photo" data-edit-id="${r.id}">📎 補單號 / 照片</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  document.getElementById("cat-pills").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-cat]");
+    if (!btn) return;
+    selectedCat = btn.dataset.cat;
+    const cls = { SPECIAL: "on-red", RETURN: "on-amber", NEW: "on-green", GENERAL: "on-blue" };
+    document.querySelectorAll("#cat-pills .pill").forEach(p => {
+      p.className = "pill" + (p.dataset.cat === selectedCat ? " " + cls[selectedCat] : "");
+    });
+  });
+
+  async function handleNewFiles(fileList, targetList, renderFn, mode) {
+    let added = 0;
+    for (const f of fileList) {
+      targetList.push(await compressImage(f));
+      added += 1;
+    }
+    renderFn();
+    if (added > 0) {
+      await detectNumbersFromPhotos(targetList, mode);
+    }
+  }
+
+  document.getElementById("in-cam-file").addEventListener("change", async (e) => {
+    await handleNewFiles(e.target.files, draftPhotos, renderDraftThumbs, "in");
+    e.target.value = "";
+  });
+
+  document.getElementById("in-album-file").addEventListener("change", async (e) => {
+    await handleNewFiles(e.target.files, draftPhotos, renderDraftThumbs, "in");
+    e.target.value = "";
+  });
+
+  document.getElementById("btn-in-ocr").addEventListener("click", async () => {
+    await detectNumbersFromPhotos(draftPhotos, "in");
+  });
+
+  document.getElementById("in-thumbs").addEventListener("click", (e) => {
+    const del = e.target.closest("[data-del-draft]");
+    if (del) {
+      draftPhotos.splice(Number(del.dataset.delDraft), 1);
+      renderDraftThumbs();
+    }
+  });
+
+  document.getElementById("btn-save").addEventListener("click", async () => {
+    const nrs = document.getElementById("in-nrs").value.trim();
+    const passNo = document.getElementById("in-pass").value.trim();
+    const plant = document.getElementById("in-plant").value.trim() || "美光 F16";
+    const part = document.getElementById("in-part").value.trim();
+    const note = document.getElementById("in-note").value.trim();
+    const urgent = document.getElementById("in-urgent").checked;
+
+    if (!part && !nrs && !passNo && !draftPhotos.length) {
+      alert("請至少輸入「工件名稱」、「NRS單號」、「放行單號」或「拍一張照片」");
+      return;
+    }
+
+    if (nrs && records.some(r => r.nrs === nrs)) {
+      if (!confirm(`單號 NRS ${nrs} 已經記過了，確定還要新增一筆嗎？`)) return;
+    }
+
+    records.unshift({
+      id: "R" + Date.now(),
+      ts: Date.now(),
+      cat: selectedCat,
+      urgent,
+      nrs,
+      passNo,
+      plant,
+      part: part || "未填工件名稱（見照片）",
+      note,
+      photos: [...draftPhotos],
+      createdAt: nowStr()
+    });
+
+    document.getElementById("in-nrs").value = "";
+    document.getElementById("in-pass").value = "";
+    document.getElementById("in-part").value = "";
+    document.getElementById("in-note").value = "";
+    document.getElementById("in-urgent").checked = false;
+    const inHint = document.getElementById("in-ocr-hint");
+    inHint.classList.remove("show");
+    inHint.innerHTML = "";
+    draftPhotos = [];
+    renderDraftThumbs();
+    await save();
+    toast("✅ 已儲存紀錄");
+  });
+
+  document.querySelector(".filter-row").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-filter]");
+    if (!btn) return;
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll(".f-tab").forEach(t => t.classList.toggle("active", t.dataset.filter === currentFilter));
+    render();
+  });
+
+  document.getElementById("q-text").addEventListener("input", render);
+
+  function renderEditThumbs() {
+    document.getElementById("edit-thumbs").innerHTML = editPhotos.map(p => `<div class="thumb"><img src="${esc(toThumbSrc(p))}" /></div>`).join("");
+  }
+
+  document.getElementById("list-area").addEventListener("click", async (e) => {
+    const delBtn = e.target.closest("[data-del-id]");
+    if (delBtn) {
+      if (!confirm("確定刪除這筆紀錄？")) return;
+      records = records.filter(r => r.id !== delBtn.dataset.delId);
+      await save();
+      toast("已刪除");
+      return;
+    }
+
+    const editBtn = e.target.closest("[data-edit-id]");
+    if (editBtn) {
+      const r = records.find(x => x.id === editBtn.dataset.editId);
+      if (!r) return;
+      editingId = r.id;
+      editPhotos = [...(r.photos || [])];
+      document.getElementById("edit-nrs").value = r.nrs || "";
+      document.getElementById("edit-pass").value = r.passNo || "";
+      document.getElementById("edit-note").value = r.note || "";
+      const editHint = document.getElementById("edit-ocr-hint");
+      editHint.classList.remove("show");
+      editHint.innerHTML = "";
+      renderEditThumbs();
+      document.getElementById("modal-edit").classList.add("open");
+    }
+  });
+
+  document.getElementById("edit-cam-file").addEventListener("change", async (e) => {
+    await handleNewFiles(e.target.files, editPhotos, renderEditThumbs, "edit");
+    e.target.value = "";
+  });
+
+  document.getElementById("edit-album-file").addEventListener("change", async (e) => {
+    await handleNewFiles(e.target.files, editPhotos, renderEditThumbs, "edit");
+    e.target.value = "";
+  });
+
+  document.getElementById("btn-edit-ocr").addEventListener("click", async () => {
+    await detectNumbersFromPhotos(editPhotos, "edit");
+  });
+
+  document.getElementById("btn-save-edit").addEventListener("click", async () => {
+    const newNrs = document.getElementById("edit-nrs").value.trim();
+    const newPass = document.getElementById("edit-pass").value.trim();
+    const newNote = document.getElementById("edit-note").value.trim();
+    records = records.map(r => r.id === editingId ? { ...r, nrs: newNrs, passNo: newPass, note: newNote, photos: editPhotos } : r);
+    document.getElementById("modal-edit").classList.remove("open");
+    await save();
+    toast("📎 已更新單號與照片");
+  });
+
+  document.getElementById("btn-close-edit").addEventListener("click", () => {
+    document.getElementById("modal-edit").classList.remove("open");
+  });
+
+  document.getElementById("btn-open-cfg").addEventListener("click", () => {
+    document.getElementById("cfg-url").value = getSheetUrl();
+    document.getElementById("modal-cfg").classList.add("open");
+  });
+
+  document.getElementById("btn-close-cfg").addEventListener("click", () => {
+    document.getElementById("modal-cfg").classList.remove("open");
+  });
+
+  document.getElementById("btn-save-cfg").addEventListener("click", async () => {
+    const u = document.getElementById("cfg-url").value.trim();
+    localStorage.setItem(URL_KEY, u);
+    document.getElementById("modal-cfg").classList.remove("open");
+    await syncFromSheet();
+    toast("已儲存試算表設定");
+  });
+
+  const modalImg = document.getElementById("modal-img");
+  const bigImg = document.getElementById("big-img");
+  const btnOpenOrig = document.getElementById("btn-open-orig");
+  const fallbackMsg = document.getElementById("img-fallback-msg");
+
+  let activeCandidates = [];
+  let candidateIdx = 0;
+  let activeRawUrl = "";
+
+  function tryLoadCandidate() {
+    if (candidateIdx >= activeCandidates.length) {
+      bigImg.style.display = "none";
+      fallbackMsg.classList.add("show");
+      return;
+    }
+    bigImg.style.display = "block";
+    fallbackMsg.classList.remove("show");
+    bigImg.src = activeCandidates[candidateIdx];
+  }
+
+  bigImg.addEventListener("error", () => {
+    candidateIdx += 1;
+    tryLoadCandidate();
+  });
+
+  bigImg.addEventListener("load", () => {
+    if (bigImg.naturalWidth > 0) {
+      bigImg.style.display = "block";
+      fallbackMsg.classList.remove("show");
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    const img = e.target.closest("img[data-raw]");
+    if (img) {
+      activeRawUrl = img.dataset.raw || "";
+      activeCandidates = buildPhotoCandidates(activeRawUrl);
+      candidateIdx = 0;
+
+      const orig = img.dataset.orig || toDriveViewUrl(activeRawUrl);
+      if (orig && orig !== "#") {
+        btnOpenOrig.href = orig;
+        btnOpenOrig.style.display = "inline-block";
+      } else {
+        btnOpenOrig.style.display = "none";
+      }
+
+      modalImg.classList.add("open");
+      tryLoadCandidate();
+    }
+  });
+
+  document.getElementById("btn-retry-img").addEventListener("click", () => {
+    if (!activeRawUrl) return;
+    activeCandidates = buildPhotoCandidates(activeRawUrl);
+    candidateIdx = 0;
+    tryLoadCandidate();
+  });
+
+  document.getElementById("btn-close-img").addEventListener("click", () => {
+    modalImg.classList.remove("open");
+    bigImg.src = "";
+    fallbackMsg.classList.remove("show");
+  });
+
+  modalImg.addEventListener("click", (e) => {
+    if (e.target === modalImg) {
+      modalImg.classList.remove("open");
+      bigImg.src = "";
+      fallbackMsg.classList.remove("show");
+    }
+  });
+
+  syncFromSheet();
+})();
+</script>
+</body>
+</html>
