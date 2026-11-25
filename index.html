@@ -97,9 +97,54 @@
     .f-tab { flex: 1; padding: 8px 6px; font-size: 13px; background: #e2e8f0; color: #334155; border-radius: 8px; }
     .f-tab.active { background: #0f172a; color: #fff; }
 
+    .month-bar {
+      display: flex; align-items: center; gap: 6px; overflow-x: auto;
+      padding: 8px 0 2px; margin-top: 8px; border-top: 1px solid #e2e8f0;
+      scrollbar-width: none;
+    }
+    .month-bar::-webkit-scrollbar { display: none; }
+    .m-chip {
+      flex: 0 0 auto; padding: 6px 10px; font-size: 12px; font-weight: 800;
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 99px;
+    }
+    .m-chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    .fold-tools {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; padding: 0 2px; font-size: 12px; color: #475569;
+    }
+    .fold-btns { display: flex; gap: 6px; }
+    .btn-fold-mini {
+      background: #e2e8f0; color: #1e293b; padding: 5px 9px; font-size: 12px; border-radius: 7px;
+    }
+
+    .month-section { margin-bottom: 14px; }
+    .month-hdr {
+      background: #0f172a; color: #fff; padding: 8px 12px; border-radius: 10px;
+      font-size: 14px; font-weight: 800; display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .month-hdr-sub { font-size: 12px; color: #cbd5e1; font-weight: 700; }
+
+    .day-group { margin-bottom: 8px; }
+    .day-hdr {
+      width: 100%; background: #e2e8f0; color: #0f172a; border: 1px solid #cbd5e1;
+      padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 800;
+      display: flex; justify-content: space-between; align-items: center; text-align: left;
+    }
+    .day-hdr.has-urg { border-left: 5px solid var(--red); background: #fef2f2; }
+    .day-hdr-left { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .day-arrow { font-size: 12px; color: #475569; transition: transform 0.15s; display: inline-block; }
+    .day-group.collapsed .day-arrow { transform: rotate(-90deg); }
+    .day-group.collapsed .day-body { display: none; }
+    .day-body { padding-top: 7px; }
+    .day-urg-tag {
+      background: var(--red); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 5px;
+    }
+
     .item {
       background: var(--card); border: 1.5px solid var(--border); border-radius: 12px;
-      padding: 12px; margin-bottom: 10px;
+      padding: 12px; margin-bottom: 9px;
     }
     .item.urgent { border-left: 6px solid var(--red); background: #fffafa; }
     .item-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
@@ -191,8 +236,8 @@
 
     <div class="row2">
       <div>
-        <span class="label">No. NRS 單號（可多筆逗號分隔）</span>
-        <input type="text" id="in-nrs" placeholder="例：063412 或 063412, 063413" />
+        <span class="label">No. NRS 單號（6碼單一單號）</span>
+        <input type="text" id="in-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
       </div>
       <div>
         <span class="label">放行單號（8開頭7碼，可多張逗號分隔）</span>
@@ -204,18 +249,24 @@
 
     <div class="row2">
       <div>
+        <span class="label">紀錄日期（預設今天，可選過去補登）</span>
+        <input type="date" id="in-date" />
+      </div>
+      <div>
         <span class="label">廠區 / 客戶</span>
         <input type="text" id="in-plant" value="美光 F16" />
       </div>
+    </div>
+
+    <div class="row2">
       <div>
         <span class="label">機台 / 工件名稱 / 料號 *</span>
         <input type="text" id="in-part" />
       </div>
-    </div>
-
-    <div>
-      <span class="label">備註</span>
-      <input type="text" id="in-note" placeholder="補充說明..." />
+      <div>
+        <span class="label">備註</span>
+        <input type="text" id="in-note" placeholder="補充說明..." />
+      </div>
     </div>
 
     <div class="photo-bar">
@@ -239,6 +290,15 @@
     <div class="filter-row">
       <button type="button" class="f-tab active" data-filter="ALL">全部 (<span id="cnt-all">0</span>)</button>
       <button type="button" class="f-tab" data-filter="URGENT">🚨 急件 (<span id="cnt-urg">0</span>)</button>
+    </div>
+    <div id="month-bar" class="month-bar"></div>
+  </div>
+
+  <div id="fold-tools" class="fold-tools" style="display:none;">
+    <span id="fold-summary">按月份與日期分組</span>
+    <div class="fold-btns">
+      <button type="button" class="btn-fold-mini" id="btn-expand-all">全部展開</button>
+      <button type="button" class="btn-fold-mini" id="btn-collapse-all">全部摺疊</button>
     </div>
   </div>
 
@@ -268,8 +328,8 @@
 
     <div class="row2">
       <div>
-        <span class="label">No. NRS 單號（可多筆逗號分隔）</span>
-        <input type="text" id="edit-nrs" placeholder="例：063412, 063413" />
+        <span class="label">No. NRS 單號（6碼單一單號）</span>
+        <input type="text" id="edit-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
       </div>
       <div>
         <span class="label">放行單號（可多張逗號分隔）</span>
@@ -280,18 +340,24 @@
 
     <div class="row2">
       <div>
+        <span class="label">紀錄日期（可修改歸屬日期）</span>
+        <input type="date" id="edit-date" />
+      </div>
+      <div>
         <span class="label">廠區 / 客戶</span>
         <input type="text" id="edit-plant" placeholder="美光 F16" />
       </div>
+    </div>
+
+    <div class="row2">
       <div>
         <span class="label">機台 / 工件名稱 / 料號</span>
         <input type="text" id="edit-part" />
       </div>
-    </div>
-
-    <div style="margin-bottom:10px;">
-      <span class="label">備註</span>
-      <input type="text" id="edit-note" placeholder="補充說明..." />
+      <div>
+        <span class="label">備註</span>
+        <input type="text" id="edit-note" placeholder="補充說明..." />
+      </div>
     </div>
 
     <div style="margin-bottom:12px;">
@@ -359,11 +425,28 @@
   let selectedCat = "SPECIAL";
   let draftPhotos = [];
   let currentFilter = "ALL";
+  let selectedMonth = "ALL";
+  let collapsedDays = {};
+  let hasInitializedCollapse = false;
   let editingId = null;
   let editSelectedCat = "SPECIAL";
   let editPhotos = [];
 
-  function parseNumberTokens(raw) {
+  // NRS 只會有一個（取單一單號並清理多餘空白/逗號）
+  function normalizeSingleNrs(raw) {
+    if (Array.isArray(raw)) {
+      const first = raw.map(x => String(x || "").trim()).find(Boolean);
+      return first || "";
+    }
+    const tokens = String(raw || "")
+      .split(/[,，、;；\s\/\n]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+    return tokens[0] || "";
+  }
+
+  // 放行單才會有很多張
+  function parsePassTokens(raw) {
     if (Array.isArray(raw)) {
       return Array.from(new Set(raw.map(x => String(x || "").trim()).filter(Boolean)));
     }
@@ -375,22 +458,22 @@
     ));
   }
 
-  function normalizeNumberListStr(raw) {
-    return parseNumberTokens(raw).join(", ");
+  function normalizePassListStr(raw) {
+    return parsePassTokens(raw).join(", ");
   }
 
-  function appendUniqueNumber(inputEl, val) {
+  function appendUniquePassNumber(inputEl, val) {
     const clean = String(val || "").trim();
     if (!clean) return false;
-    const list = parseNumberTokens(inputEl.value);
+    const list = parsePassTokens(inputEl.value);
     if (list.includes(clean)) return false;
     list.push(clean);
     inputEl.value = list.join(", ");
     return true;
   }
 
-  function appendManyUniqueNumbers(inputEl, vals) {
-    const list = parseNumberTokens(inputEl.value);
+  function appendManyUniquePassNumbers(inputEl, vals) {
+    const list = parsePassTokens(inputEl.value);
     let added = 0;
     (vals || []).forEach(v => {
       const clean = String(v || "").trim();
@@ -401,6 +484,83 @@
     });
     inputEl.value = list.join(", ");
     return added;
+  }
+
+  function getTodayDateInputStr() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function buildTimestampFromDateInput(dateStr, fallbackTs) {
+    const todayStr = getTodayDateInputStr();
+    if (!dateStr || dateStr === todayStr) {
+      return fallbackTs || Date.now();
+    }
+    const parts = String(dateStr).split("-");
+    if (parts.length !== 3) return fallbackTs || Date.now();
+    const y = Number(parts[0]);
+    const m = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    const ref = fallbackTs ? new Date(fallbackTs) : new Date();
+    const d = new Date(y, m, day, ref.getHours(), ref.getMinutes(), ref.getSeconds(), ref.getMilliseconds());
+    return Number.isNaN(d.getTime()) ? (fallbackTs || Date.now()) : d.getTime();
+  }
+
+  function formatCreatedAtFromTs(ts, isBackfill) {
+    const d = new Date(ts);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return isBackfill ? `${mm}/${dd}（補登）` : `${mm}/${dd} ${hh}:${mi}`;
+  }
+
+  function getRecordDateInfo(r) {
+    const tsNum = Number(r && r.ts);
+    if (Number.isFinite(tsNum) && tsNum > 0) {
+      const d = new Date(tsNum);
+      if (!Number.isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const wk = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
+        return {
+          monthKey: `${y}-${m}`,
+          monthLabel: `${y}年${Number(m)}月`,
+          dayKey: `${y}-${m}-${day}`,
+          dayLabel: `${m}/${day}（週${wk}）`,
+          sortTs: tsNum
+        };
+      }
+    }
+    const raw = String((r && r.createdAt) || "").trim();
+    const m = raw.match(/(\d{1,2})\/(\d{1,2})/);
+    const yNow = new Date().getFullYear();
+    if (m) {
+      const mm = m[1].padStart(2, "0");
+      const dd = m[2].padStart(2, "0");
+      return {
+        monthKey: `${yNow}-${mm}`,
+        monthLabel: `${yNow}年${Number(mm)}月`,
+        dayKey: `${yNow}-${mm}-${dd}`,
+        dayLabel: `${mm}/${dd}`,
+        sortTs: 0
+      };
+    }
+    return {
+      monthKey: "0000-00",
+      monthLabel: "未標示月份",
+      dayKey: "0000-00-00",
+      dayLabel: "未標示日期",
+      sortTs: 0
+    };
+  }
+
+  function getTodayDayKey() {
+    return getTodayDateInputStr();
   }
 
   function extractDriveId(url) {
@@ -534,15 +694,6 @@
     return String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   }
 
-  function nowStr() {
-    const d = new Date();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-    return `${mm}/${dd} ${hh}:${mi}`;
-  }
-
   function applyCatPillsUI(containerSelector, catVal) {
     const cls = { SPECIAL: "on-red", RETURN: "on-amber", NEW: "on-green", GENERAL: "on-blue" };
     document.querySelectorAll(`${containerSelector} .pill`).forEach(p => {
@@ -550,7 +701,6 @@
     });
   }
 
-  // 存檔專用的 1600px 高解析壓縮
   function compressImage(file) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -574,7 +724,6 @@
     });
   }
 
-  // 單號辨識專用的 900px 輕量縮圖，加快上傳與辨識速度（不影響存檔的 1600px 原圖）
   function downscaleDataUrlForOcr(dataUrl, maxDim = 900, quality = 0.72) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -640,15 +789,16 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "辨識失敗");
 
-      const nrsList = parseNumberTokens(data.nrsList || data.nrs || []);
-      const passList = parseNumberTokens(data.passList || data.passNo || []);
+      const nrsList = parsePassTokens(data.nrsList || data.nrs || []);
+      const passList = parsePassTokens(data.passList || data.passNo || []);
 
-      // 支援多張放行單 / 多組 NRS 自動累加帶入（不覆蓋已輸入的單號）
-      if (nrsList.length > 0) {
-        appendManyUniqueNumbers(nrsInput, nrsList);
+      // NRS 只會有一個：若欄位目前空白且抓到唯一一筆就自動填入；若抓到多筆候選則列按鈕供單選覆蓋
+      if (nrsList.length === 1 && !normalizeSingleNrs(nrsInput.value)) {
+        nrsInput.value = nrsList[0];
       }
+      // 放行單會有多張：自動累加不重複的 8 開頭 7 碼放行單號
       if (passList.length > 0) {
-        appendManyUniqueNumbers(passInput, passList);
+        appendManyUniquePassNumbers(passInput, passList);
       }
 
       if (!nrsList.length && !passList.length) {
@@ -657,17 +807,17 @@
       }
 
       const chips = [];
-      if (passList.length > 1) {
-        chips.push(`<button type="button" class="ocr-chip all-btn" data-fill-target="${mode}-pass" data-fill-all="${esc(passList.join(", "))}">＋ 全部 ${passList.length} 張放行單</button>`);
-      }
       nrsList.forEach(num => {
-        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-nrs" data-fill-val="${esc(num)}">＋ NRS：${esc(num)}</button>`);
+        chips.push(`<button type="button" class="ocr-chip" data-set-nrs="${mode}-nrs" data-nrs-val="${esc(num)}">套用 NRS：${esc(num)}</button>`);
       });
+      if (passList.length > 1) {
+        chips.push(`<button type="button" class="ocr-chip all-btn" data-fill-pass="${mode}-pass" data-fill-all="${esc(passList.join(", "))}">＋ 全部 ${passList.length} 張放行單</button>`);
+      }
       passList.forEach(num => {
-        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-pass" data-fill-val="${esc(num)}">＋ 放行：${esc(num)}</button>`);
+        chips.push(`<button type="button" class="ocr-chip" data-fill-pass="${mode}-pass" data-fill-val="${esc(num)}">＋ 放行：${esc(num)}</button>`);
       });
 
-      hintEl.innerHTML = `<div>✨ 偵測結果（已自動累加填入，也可點按鈕追加）：</div><div class="ocr-chips">${chips.join("")}</div>`;
+      hintEl.innerHTML = `<div>✨ 偵測結果（NRS 單一覆蓋、放行單可多張累加）：</div><div class="ocr-chips">${chips.join("")}</div>`;
       toast(`✨ 偵測到 ${nrsList.length} 組 NRS、${passList.length} 張放行單`);
     } catch (err) {
       hintEl.innerHTML = `⚠️ 單號偵測失敗：${esc(err.message || "請檢查 Apps Script 設定與部署版本")}`;
@@ -677,17 +827,27 @@
   }
 
   document.addEventListener("click", (e) => {
-    const chip = e.target.closest("[data-fill-target]");
-    if (chip) {
-      const el = document.getElementById(chip.dataset.fillTarget);
+    const nrsBtn = e.target.closest("[data-set-nrs]");
+    if (nrsBtn) {
+      const el = document.getElementById(nrsBtn.dataset.setNrs);
+      if (el) {
+        el.value = nrsBtn.dataset.nrsVal;
+        toast(`✅ 已套用單一 NRS：${nrsBtn.dataset.nrsVal}`);
+      }
+      return;
+    }
+
+    const passChip = e.target.closest("[data-fill-pass]");
+    if (passChip) {
+      const el = document.getElementById(passChip.dataset.fillPass);
       if (!el) return;
-      if (chip.dataset.fillAll) {
-        const vals = parseNumberTokens(chip.dataset.fillAll);
-        const added = appendManyUniqueNumbers(el, vals);
-        toast(added > 0 ? `✅ 已追加 ${added} 筆單號` : "這些單號都已在欄位中");
-      } else if (chip.dataset.fillVal) {
-        const ok = appendUniqueNumber(el, chip.dataset.fillVal);
-        toast(ok ? `✅ 已追加 ${chip.dataset.fillVal}` : `${chip.dataset.fillVal} 已在欄位中`);
+      if (passChip.dataset.fillAll) {
+        const vals = parsePassTokens(passChip.dataset.fillAll);
+        const added = appendManyUniquePassNumbers(el, vals);
+        toast(added > 0 ? `✅ 已追加 ${added} 張放行單` : "這些放行單號都已在欄位中");
+      } else if (passChip.dataset.fillVal) {
+        const ok = appendUniquePassNumber(el, passChip.dataset.fillVal);
+        toast(ok ? `✅ 已追加放行單 ${passChip.dataset.fillVal}` : `${passChip.dataset.fillVal} 已在欄位中`);
       }
     }
   });
@@ -727,6 +887,47 @@
     }).join("");
   }
 
+  function renderRecordCard(r, catText) {
+    const singleNrs = normalizeSingleNrs(r.nrs);
+    const passTokens = parsePassTokens(r.passNo);
+    const nrsBadge = singleNrs
+      ? `<span class="b b-nrs">NRS ${esc(singleNrs)}</span>`
+      : `<span class="b b-nonrs">待補單號</span>`;
+    const passBadges = passTokens
+      .map(p => `<span class="b b-pass">放行 ${esc(p)}</span>`)
+      .join("");
+
+    return `
+      <div class="item ${r.urgent ? "urgent" : ""}">
+        <div class="item-top">
+          <div class="badges">
+            ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
+            ${nrsBadge}
+            ${passBadges}
+            <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
+          </div>
+          <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
+        </div>
+
+        <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
+        <div class="item-sub">
+          建檔：${esc(r.createdAt)}
+          ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
+        </div>
+
+        ${r.photos && r.photos.length ? `
+          <div class="thumbs" style="margin-bottom:4px;">
+            ${r.photos.map(p => renderThumbHtml(p)).join("")}
+          </div>
+        ` : ""}
+
+        <div class="item-actions">
+          <button type="button" class="btn-add-photo" data-edit-id="${r.id}">✏️ 修改紀錄 / 補單號・照片</button>
+        </div>
+      </div>
+    `;
+  }
+
   function render() {
     const q = document.getElementById("q-text").value.trim().toLowerCase();
 
@@ -734,69 +935,156 @@
     document.getElementById("cnt-all").textContent = records.length;
     document.getElementById("cnt-urg").textContent = urgCnt;
 
+    const monthCountMap = new Map();
+    records.forEach(r => {
+      const info = getRecordDateInfo(r);
+      if (!monthCountMap.has(info.monthKey)) {
+        monthCountMap.set(info.monthKey, { key: info.monthKey, label: info.monthLabel, count: 0 });
+      }
+      monthCountMap.get(info.monthKey).count += 1;
+    });
+    const monthList = Array.from(monthCountMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+    if (selectedMonth !== "ALL" && !monthCountMap.has(selectedMonth)) {
+      selectedMonth = "ALL";
+    }
+
+    const monthBar = document.getElementById("month-bar");
+    if (monthList.length > 0) {
+      monthBar.style.display = "flex";
+      const chipsHtml = [
+        `<button type="button" class="m-chip ${selectedMonth === "ALL" ? "active" : ""}" data-month="ALL">全部月份 (${records.length})</button>`,
+        ...monthList.map(m =>
+          `<button type="button" class="m-chip ${selectedMonth === m.key ? "active" : ""}" data-month="${esc(m.key)}">${esc(m.label)} (${m.count})</button>`
+        )
+      ];
+      monthBar.innerHTML = chipsHtml.join("");
+    } else {
+      monthBar.style.display = "none";
+      monthBar.innerHTML = "";
+    }
+
     const catText = { SPECIAL: "🔴 特殊", RETURN: "🟠 退貨", NEW: "🟢 新品", GENERAL: "🔵 一般" };
 
     const filtered = records
       .filter(r => {
         if (currentFilter === "URGENT" && !r.urgent) return false;
+        const info = getRecordDateInfo(r);
+        if (selectedMonth !== "ALL" && info.monthKey !== selectedMonth) return false;
         if (q) {
-          const text = `${r.nrs} ${r.passNo || ""} ${r.plant} ${r.part} ${r.note}`.toLowerCase();
+          const text = `${r.nrs} ${r.passNo || ""} ${r.plant} ${r.part} ${r.note} ${r.createdAt}`.toLowerCase();
           if (!text.includes(q)) return false;
         }
         return true;
       })
-      .sort((a, b) => {
-        if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
-        return b.ts - a.ts;
-      });
+      .sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0));
 
+    const foldTools = document.getElementById("fold-tools");
     const area = document.getElementById("list-area");
+
     if (!filtered.length) {
+      foldTools.style.display = "none";
       area.innerHTML = `<div style="text-align:center;color:#64748b;padding:28px;font-size:14px;">目前沒有符合的紀錄</div>`;
       return;
     }
 
-    area.innerHTML = filtered.map(r => {
-      const nrsTokens = parseNumberTokens(r.nrs);
-      const passTokens = parseNumberTokens(r.passNo);
-      const nrsBadges = nrsTokens.length
-        ? nrsTokens.map(n => `<span class="b b-nrs">NRS ${esc(n)}</span>`).join("")
-        : `<span class="b b-nonrs">待補單號</span>`;
-      const passBadges = passTokens
-        .map(p => `<span class="b b-pass">放行 ${esc(p)}</span>`)
-        .join("");
+    const monthGroupsMap = new Map();
+    const allDayKeys = [];
+    filtered.forEach(r => {
+      const info = getRecordDateInfo(r);
+      if (!monthGroupsMap.has(info.monthKey)) {
+        monthGroupsMap.set(info.monthKey, {
+          monthKey: info.monthKey,
+          monthLabel: info.monthLabel,
+          totalCount: 0,
+          daysMap: new Map()
+        });
+      }
+      const mGrp = monthGroupsMap.get(info.monthKey);
+      mGrp.totalCount += 1;
+      if (!mGrp.daysMap.has(info.dayKey)) {
+        mGrp.daysMap.set(info.dayKey, {
+          dayKey: info.dayKey,
+          dayLabel: info.dayLabel,
+          items: []
+        });
+        allDayKeys.push(info.dayKey);
+      }
+      mGrp.daysMap.get(info.dayKey).items.push(r);
+    });
+
+    if (!hasInitializedCollapse && allDayKeys.length > 0) {
+      const sortedAllDays = [...allDayKeys].sort((a, b) => b.localeCompare(a));
+      const todayKey = getTodayDayKey();
+      const defaultOpenDay = sortedAllDays.includes(todayKey) ? todayKey : sortedAllDays[0];
+      sortedAllDays.forEach(dk => {
+        if (dk !== defaultOpenDay) collapsedDays[dk] = true;
+      });
+      hasInitializedCollapse = true;
+    }
+
+    foldTools.style.display = "flex";
+    document.getElementById("fold-summary").textContent = `共 ${monthGroupsMap.size} 個月・${allDayKeys.length} 天（點日期列可摺疊/展開）`;
+
+    const sortedMonths = Array.from(monthGroupsMap.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+
+    area.innerHTML = sortedMonths.map(mGrp => {
+      const sortedDays = Array.from(mGrp.daysMap.values()).sort((a, b) => b.dayKey.localeCompare(a.dayKey));
+      const daysHtml = sortedDays.map(dGrp => {
+        const dayItems = [...dGrp.items].sort((a, b) => {
+          if (Boolean(a.urgent) !== Boolean(b.urgent)) return a.urgent ? -1 : 1;
+          return (Number(b.ts) || 0) - (Number(a.ts) || 0);
+        });
+        const urgInDay = dayItems.filter(x => x.urgent).length;
+        const isCollapsed = !q && Boolean(collapsedDays[dGrp.dayKey]);
+
+        return `
+          <div class="day-group ${isCollapsed ? "collapsed" : ""}" data-day-wrap="${esc(dGrp.dayKey)}">
+            <button type="button" class="day-hdr ${urgInDay > 0 ? "has-urg" : ""}" data-toggle-day="${esc(dGrp.dayKey)}">
+              <span class="day-hdr-left">
+                <span class="day-arrow">▼</span>
+                <span>📅 ${esc(dGrp.dayLabel)}</span>
+                ${urgInDay > 0 ? `<span class="day-urg-tag">🚨 ${urgInDay} 急件</span>` : ""}
+              </span>
+              <span>${dayItems.length} 筆</span>
+            </button>
+            <div class="day-body">
+              ${dayItems.map(item => renderRecordCard(item, catText)).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
 
       return `
-        <div class="item ${r.urgent ? "urgent" : ""}">
-          <div class="item-top">
-            <div class="badges">
-              ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
-              ${nrsBadges}
-              ${passBadges}
-              <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
-            </div>
-            <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
+        <div class="month-section">
+          <div class="month-hdr">
+            <span>🗓️ ${esc(mGrp.monthLabel)}</span>
+            <span class="month-hdr-sub">${sortedDays.length} 天・共 ${mGrp.totalCount} 筆</span>
           </div>
-
-          <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
-          <div class="item-sub">
-            建檔：${esc(r.createdAt)}
-            ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
-          </div>
-
-          ${r.photos && r.photos.length ? `
-            <div class="thumbs" style="margin-bottom:4px;">
-              ${r.photos.map(p => renderThumbHtml(p)).join("")}
-            </div>
-          ` : ""}
-
-          <div class="item-actions">
-            <button type="button" class="btn-add-photo" data-edit-id="${r.id}">✏️ 修改紀錄 / 補單號・照片</button>
-          </div>
+          ${daysHtml}
         </div>
       `;
     }).join("");
   }
+
+  document.getElementById("month-bar").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-month]");
+    if (!btn) return;
+    selectedMonth = btn.dataset.month;
+    render();
+  });
+
+  document.getElementById("btn-expand-all").addEventListener("click", () => {
+    collapsedDays = {};
+    render();
+  });
+
+  document.getElementById("btn-collapse-all").addEventListener("click", () => {
+    records.forEach(r => {
+      const info = getRecordDateInfo(r);
+      collapsedDays[info.dayKey] = true;
+    });
+    render();
+  });
 
   document.getElementById("cat-pills").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-cat]");
@@ -855,9 +1143,14 @@
     }
   });
 
+  // 初始化新增區的日期為今天
+  const inDateEl = document.getElementById("in-date");
+  inDateEl.value = getTodayDateInputStr();
+
   document.getElementById("btn-save").addEventListener("click", async () => {
-    const nrs = normalizeNumberListStr(document.getElementById("in-nrs").value);
-    const passNo = normalizeNumberListStr(document.getElementById("in-pass").value);
+    const nrs = normalizeSingleNrs(document.getElementById("in-nrs").value);
+    const passNo = normalizePassListStr(document.getElementById("in-pass").value);
+    const dateVal = document.getElementById("in-date").value || getTodayDateInputStr();
     const plant = document.getElementById("in-plant").value.trim() || "美光 F16";
     const part = document.getElementById("in-part").value.trim();
     const note = document.getElementById("in-note").value.trim();
@@ -868,17 +1161,18 @@
       return;
     }
 
-    const newNrsTokens = parseNumberTokens(nrs);
-    const dupNrs = newNrsTokens.find(tok =>
-      records.some(r => parseNumberTokens(r.nrs).includes(tok))
-    );
-    if (dupNrs) {
-      if (!confirm(`單號 NRS ${dupNrs} 已經記過了，確定還要新增一筆嗎？`)) return;
+    if (nrs && records.some(r => normalizeSingleNrs(r.nrs) === nrs)) {
+      if (!confirm(`單號 NRS ${nrs} 已經記過了，確定還要新增一筆嗎？`)) return;
     }
+
+    const todayStr = getTodayDateInputStr();
+    const isBackfill = dateVal !== todayStr;
+    const recordTs = buildTimestampFromDateInput(dateVal, Date.now());
+    const createdStr = formatCreatedAtFromTs(recordTs, isBackfill);
 
     records.unshift({
       id: "R" + Date.now(),
-      ts: Date.now(),
+      ts: recordTs,
       cat: selectedCat,
       urgent,
       nrs,
@@ -887,21 +1181,28 @@
       part: part || "未填工件名稱（見照片）",
       note,
       photos: [...draftPhotos],
-      createdAt: nowStr()
+      createdAt: createdStr
     });
+
+    // 自動展開所選日期（方便立刻看到剛補登或新增的該天紀錄）
+    collapsedDays[dateVal] = false;
+    if (selectedMonth !== "ALL" && !dateVal.startsWith(selectedMonth)) {
+      selectedMonth = "ALL";
+    }
 
     document.getElementById("in-nrs").value = "";
     document.getElementById("in-pass").value = "";
     document.getElementById("in-part").value = "";
     document.getElementById("in-note").value = "";
     document.getElementById("in-urgent").checked = false;
+    document.getElementById("in-date").value = getTodayDateInputStr();
     const inHint = document.getElementById("in-ocr-hint");
     inHint.classList.remove("show");
     inHint.innerHTML = "";
     draftPhotos = [];
     renderDraftThumbs();
     await save();
-    toast("✅ 已儲存紀錄");
+    toast(isBackfill ? `✅ 已補登 ${dateVal.slice(5).replace("-", "/")} 紀錄` : "✅ 已儲存紀錄");
   });
 
   document.querySelector(".filter-row").addEventListener("click", (e) => {
@@ -915,6 +1216,19 @@
   document.getElementById("q-text").addEventListener("input", render);
 
   document.getElementById("list-area").addEventListener("click", async (e) => {
+    const dayBtn = e.target.closest("[data-toggle-day]");
+    if (dayBtn) {
+      const dk = dayBtn.dataset.toggleDay;
+      collapsedDays[dk] = !collapsedDays[dk];
+      const wrap = document.querySelector(`[data-day-wrap="${CSS.escape(dk)}"]`);
+      if (wrap) {
+        wrap.classList.toggle("collapsed", Boolean(collapsedDays[dk]));
+      } else {
+        render();
+      }
+      return;
+    }
+
     const delBtn = e.target.closest("[data-del-id]");
     if (delBtn) {
       if (!confirm("確定刪除這筆紀錄？")) return;
@@ -932,8 +1246,10 @@
       editSelectedCat = r.cat || "SPECIAL";
       applyCatPillsUI("#edit-cat-pills", editSelectedCat);
       document.getElementById("edit-urgent").checked = Boolean(r.urgent);
-      document.getElementById("edit-nrs").value = normalizeNumberListStr(r.nrs || "");
-      document.getElementById("edit-pass").value = normalizeNumberListStr(r.passNo || "");
+      document.getElementById("edit-nrs").value = normalizeSingleNrs(r.nrs || "");
+      document.getElementById("edit-pass").value = normalizePassListStr(r.passNo || "");
+      const info = getRecordDateInfo(r);
+      document.getElementById("edit-date").value = info.dayKey !== "0000-00-00" ? info.dayKey : getTodayDateInputStr();
       document.getElementById("edit-plant").value = r.plant || "美光 F16";
       document.getElementById("edit-part").value = r.part || "";
       document.getElementById("edit-note").value = r.note || "";
@@ -961,24 +1277,38 @@
   });
 
   document.getElementById("btn-save-edit").addEventListener("click", async () => {
-    const newNrs = normalizeNumberListStr(document.getElementById("edit-nrs").value);
-    const newPass = normalizeNumberListStr(document.getElementById("edit-pass").value);
+    const newNrs = normalizeSingleNrs(document.getElementById("edit-nrs").value);
+    const newPass = normalizePassListStr(document.getElementById("edit-pass").value);
+    const newDateVal = document.getElementById("edit-date").value;
     const newPlant = document.getElementById("edit-plant").value.trim() || "美光 F16";
     const newPart = document.getElementById("edit-part").value.trim() || "未填工件名稱（見照片）";
     const newNote = document.getElementById("edit-note").value.trim();
     const newUrgent = document.getElementById("edit-urgent").checked;
 
-    records = records.map(r => r.id === editingId ? {
-      ...r,
-      cat: editSelectedCat,
-      urgent: newUrgent,
-      nrs: newNrs,
-      passNo: newPass,
-      plant: newPlant,
-      part: newPart,
-      note: newNote,
-      photos: editPhotos
-    } : r);
+    records = records.map(r => {
+      if (r.id !== editingId) return r;
+      const oldInfo = getRecordDateInfo(r);
+      let nextTs = Number(r.ts) || Date.now();
+      let nextCreatedAt = r.createdAt;
+      if (newDateVal && newDateVal !== oldInfo.dayKey) {
+        nextTs = buildTimestampFromDateInput(newDateVal, nextTs);
+        nextCreatedAt = formatCreatedAtFromTs(nextTs, true);
+        collapsedDays[newDateVal] = false;
+      }
+      return {
+        ...r,
+        ts: nextTs,
+        createdAt: nextCreatedAt,
+        cat: editSelectedCat,
+        urgent: newUrgent,
+        nrs: newNrs,
+        passNo: newPass,
+        plant: newPlant,
+        part: newPart,
+        note: newNote,
+        photos: editPhotos
+      };
+    });
     document.getElementById("modal-edit").classList.remove("open");
     await save();
     toast("✅ 已更新紀錄");
