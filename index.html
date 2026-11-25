@@ -79,6 +79,9 @@
       background: #ffffff; border: 1.5px solid #f59e0b; color: #92400e;
       padding: 5px 9px; border-radius: 8px; font-size: 12px; font-weight: 800;
     }
+    .ocr-chip.all-btn {
+      background: #0369a1; border-color: #0369a1; color: #ffffff;
+    }
 
     .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .thumb { position: relative; width: 76px; height: 76px; }
@@ -119,10 +122,14 @@
 
     .modal {
       display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.82);
-      z-index: 50; align-items: center; justify-content: center; padding: 16px;
+      z-index: 50; align-items: center; justify-content: center; padding: 14px;
+      overflow-y: auto;
     }
     .modal.open { display: flex; }
-    .modal-box { background: #fff; border-radius: 14px; padding: 16px; width: 100%; max-width: 420px; }
+    .modal-box {
+      background: #fff; border-radius: 14px; padding: 15px; width: 100%; max-width: 460px;
+      max-height: 92vh; overflow-y: auto;
+    }
     .img-modal-box {
       background: #0f172a; color: #fff; border-radius: 14px; padding: 12px;
       width: 100%; max-width: 96vw; text-align: center;
@@ -184,12 +191,12 @@
 
     <div class="row2">
       <div>
-        <span class="label">No. NRS 單號（6碼）</span>
-        <input type="text" id="in-nrs" inputmode="numeric" placeholder="例：063412" />
+        <span class="label">No. NRS 單號（可多筆逗號分隔）</span>
+        <input type="text" id="in-nrs" placeholder="例：063412 或 063412, 063413" />
       </div>
       <div>
-        <span class="label">放行單號（8開頭共7碼）</span>
-        <input type="text" id="in-pass" inputmode="numeric" placeholder="例：8354299" />
+        <span class="label">放行單號（8開頭7碼，可多張逗號分隔）</span>
+        <input type="text" id="in-pass" placeholder="例：8354299, 8354300" />
       </div>
     </div>
 
@@ -238,28 +245,55 @@
   <div id="list-area"></div>
 </div>
 
-<!-- 補單號 / 補拍照片小視窗 -->
+<!-- 修改紀錄 / 補單號 / 補拍照片視窗 -->
 <div id="modal-edit" class="modal">
   <div class="modal-box">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <strong style="font-size:16px;">📎 補單號 / 補拍照片</strong>
+      <strong style="font-size:16px;">✏️ 修改紀錄 / 補單號・照片</strong>
       <button type="button" id="btn-close-edit" style="background:#e2e8f0; padding:5px 10px;">✕</button>
     </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span class="label" style="margin-bottom:0;">工件類別</span>
+      <label style="font-size:13px; color:var(--red); font-weight:700; display:flex; align-items:center; gap:5px; cursor:pointer;">
+        <input type="checkbox" id="edit-urgent" style="width:18px; height:18px;" /> 🚨 客戶急件
+      </label>
+    </div>
+    <div class="pills" id="edit-cat-pills">
+      <button type="button" class="pill" data-cat="SPECIAL">🔴 特殊</button>
+      <button type="button" class="pill" data-cat="RETURN">🟠 退貨</button>
+      <button type="button" class="pill" data-cat="NEW">🟢 新品</button>
+      <button type="button" class="pill" data-cat="GENERAL">🔵 一般</button>
+    </div>
+
     <div class="row2">
       <div>
-        <span class="label">No. NRS 單號（6碼）</span>
-        <input type="text" id="edit-nrs" inputmode="numeric" placeholder="例：063412" />
+        <span class="label">No. NRS 單號（可多筆逗號分隔）</span>
+        <input type="text" id="edit-nrs" placeholder="例：063412, 063413" />
       </div>
       <div>
-        <span class="label">放行單號（8開頭共7碼）</span>
-        <input type="text" id="edit-pass" inputmode="numeric" placeholder="例：8354299" />
+        <span class="label">放行單號（可多張逗號分隔）</span>
+        <input type="text" id="edit-pass" placeholder="例：8354299, 8354300" />
       </div>
     </div>
     <div id="edit-ocr-hint" class="ocr-hint"></div>
-    <div style="margin-bottom:10px;">
-      <span class="label">追加備註</span>
-      <input type="text" id="edit-note" placeholder="例：已補拍放行單" />
+
+    <div class="row2">
+      <div>
+        <span class="label">廠區 / 客戶</span>
+        <input type="text" id="edit-plant" placeholder="美光 F16" />
+      </div>
+      <div>
+        <span class="label">機台 / 工件名稱 / 料號</span>
+        <input type="text" id="edit-part" />
+      </div>
     </div>
+
+    <div style="margin-bottom:10px;">
+      <span class="label">備註</span>
+      <input type="text" id="edit-note" placeholder="補充說明..." />
+    </div>
+
     <div style="margin-bottom:12px;">
       <div class="photo-bar" style="margin-top:0; margin-bottom:0;">
         <label class="btn-cam">
@@ -326,7 +360,48 @@
   let draftPhotos = [];
   let currentFilter = "ALL";
   let editingId = null;
+  let editSelectedCat = "SPECIAL";
   let editPhotos = [];
+
+  function parseNumberTokens(raw) {
+    if (Array.isArray(raw)) {
+      return Array.from(new Set(raw.map(x => String(x || "").trim()).filter(Boolean)));
+    }
+    return Array.from(new Set(
+      String(raw || "")
+        .split(/[,，、;；\s\/\n]+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+    ));
+  }
+
+  function normalizeNumberListStr(raw) {
+    return parseNumberTokens(raw).join(", ");
+  }
+
+  function appendUniqueNumber(inputEl, val) {
+    const clean = String(val || "").trim();
+    if (!clean) return false;
+    const list = parseNumberTokens(inputEl.value);
+    if (list.includes(clean)) return false;
+    list.push(clean);
+    inputEl.value = list.join(", ");
+    return true;
+  }
+
+  function appendManyUniqueNumbers(inputEl, vals) {
+    const list = parseNumberTokens(inputEl.value);
+    let added = 0;
+    (vals || []).forEach(v => {
+      const clean = String(v || "").trim();
+      if (clean && !list.includes(clean)) {
+        list.push(clean);
+        added += 1;
+      }
+    });
+    inputEl.value = list.join(", ");
+    return added;
+  }
 
   function extractDriveId(url) {
     if (typeof url !== "string") return "";
@@ -468,6 +543,13 @@
     return `${mm}/${dd} ${hh}:${mi}`;
   }
 
+  function applyCatPillsUI(containerSelector, catVal) {
+    const cls = { SPECIAL: "on-red", RETURN: "on-amber", NEW: "on-green", GENERAL: "on-blue" };
+    document.querySelectorAll(`${containerSelector} .pill`).forEach(p => {
+      p.className = "pill" + (p.dataset.cat === catVal ? " " + (cls[catVal] || "on-red") : "");
+    });
+  }
+
   // 存檔專用的 1600px 高解析壓縮
   function compressImage(file) {
     return new Promise((resolve) => {
@@ -528,7 +610,7 @@
 
     const base64Photos = (photoList || []).filter(p => typeof p === "string" && p.startsWith("data:image/"));
     if (!base64Photos.length) {
-      toast("請先拍照或從相簿選一張照片");
+      toast("請先拍照或從相簿選一張新照片");
       return;
     }
 
@@ -540,11 +622,11 @@
 
     btnOcr.disabled = true;
     hintEl.classList.add("show");
-    hintEl.innerHTML = "⚡ 正在快速辨識 <b>No. NRS (6碼)</b> 與 <b>8開頭 (7碼)</b> 單號...";
+    hintEl.innerHTML = "⚡ 正在快速辨識 <b>No. NRS (6碼)</b> 與 <b>多張 8開頭 (7碼) 放行單</b>...";
 
     try {
       const lightPhotos = await Promise.all(
-        base64Photos.slice(0, 4).map(p => downscaleDataUrlForOcr(p, 900, 0.72))
+        base64Photos.slice(0, 6).map(p => downscaleDataUrlForOcr(p, 900, 0.72))
       );
 
       const res = await fetch(url, {
@@ -558,14 +640,15 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "辨識失敗");
 
-      const nrsList = Array.isArray(data.nrsList) ? data.nrsList : (data.nrs ? [data.nrs] : []);
-      const passList = Array.isArray(data.passList) ? data.passList : (data.passNo ? [data.passNo] : []);
+      const nrsList = parseNumberTokens(data.nrsList || data.nrs || []);
+      const passList = parseNumberTokens(data.passList || data.passNo || []);
 
-      if (nrsList.length === 1 && !nrsInput.value.trim()) {
-        nrsInput.value = nrsList[0];
+      // 支援多張放行單 / 多組 NRS 自動累加帶入（不覆蓋已輸入的單號）
+      if (nrsList.length > 0) {
+        appendManyUniqueNumbers(nrsInput, nrsList);
       }
-      if (passList.length === 1 && !passInput.value.trim()) {
-        passInput.value = passList[0];
+      if (passList.length > 0) {
+        appendManyUniqueNumbers(passInput, passList);
       }
 
       if (!nrsList.length && !passList.length) {
@@ -574,15 +657,18 @@
       }
 
       const chips = [];
+      if (passList.length > 1) {
+        chips.push(`<button type="button" class="ocr-chip all-btn" data-fill-target="${mode}-pass" data-fill-all="${esc(passList.join(", "))}">＋ 全部 ${passList.length} 張放行單</button>`);
+      }
       nrsList.forEach(num => {
-        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-nrs" data-fill-val="${esc(num)}">填入 NRS：${esc(num)}</button>`);
+        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-nrs" data-fill-val="${esc(num)}">＋ NRS：${esc(num)}</button>`);
       });
       passList.forEach(num => {
-        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-pass" data-fill-val="${esc(num)}">填入單號：${esc(num)}</button>`);
+        chips.push(`<button type="button" class="ocr-chip" data-fill-target="${mode}-pass" data-fill-val="${esc(num)}">＋ 放行：${esc(num)}</button>`);
       });
 
-      hintEl.innerHTML = `<div>✨ 偵測結果（點按鈕可一鍵套用）：</div><div class="ocr-chips">${chips.join("")}</div>`;
-      toast("✨ 單號偵測完成");
+      hintEl.innerHTML = `<div>✨ 偵測結果（已自動累加填入，也可點按鈕追加）：</div><div class="ocr-chips">${chips.join("")}</div>`;
+      toast(`✨ 偵測到 ${nrsList.length} 組 NRS、${passList.length} 張放行單`);
     } catch (err) {
       hintEl.innerHTML = `⚠️ 單號偵測失敗：${esc(err.message || "請檢查 Apps Script 設定與部署版本")}`;
     } finally {
@@ -594,9 +680,14 @@
     const chip = e.target.closest("[data-fill-target]");
     if (chip) {
       const el = document.getElementById(chip.dataset.fillTarget);
-      if (el) {
-        el.value = chip.dataset.fillVal;
-        toast("✅ 已填入 " + chip.dataset.fillVal);
+      if (!el) return;
+      if (chip.dataset.fillAll) {
+        const vals = parseNumberTokens(chip.dataset.fillAll);
+        const added = appendManyUniqueNumbers(el, vals);
+        toast(added > 0 ? `✅ 已追加 ${added} 筆單號` : "這些單號都已在欄位中");
+      } else if (chip.dataset.fillVal) {
+        const ok = appendUniqueNumber(el, chip.dataset.fillVal);
+        toast(ok ? `✅ 已追加 ${chip.dataset.fillVal}` : `${chip.dataset.fillVal} 已在欄位中`);
       }
     }
   });
@@ -617,6 +708,20 @@
         <div class="thumb">
           <img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" />
           <button type="button" class="thumb-del" data-del-draft="${i}">×</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderEditThumbs() {
+    document.getElementById("edit-thumbs").innerHTML = editPhotos.map((src, i) => {
+      const thumbSrc = esc(toThumbSrc(src));
+      const origHref = esc(toDriveViewUrl(src));
+      const rawEnc = esc(src);
+      return `
+        <div class="thumb">
+          <img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" />
+          <button type="button" class="thumb-del" data-del-edit-photo="${i}">×</button>
         </div>
       `;
     }).join("");
@@ -651,56 +756,72 @@
       return;
     }
 
-    area.innerHTML = filtered.map(r => `
-      <div class="item ${r.urgent ? "urgent" : ""}">
-        <div class="item-top">
-          <div class="badges">
-            ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
-            ${r.nrs ? `<span class="b b-nrs">NRS ${esc(r.nrs)}</span>` : `<span class="b b-nonrs">待補單號</span>`}
-            ${r.passNo ? `<span class="b b-pass">放行 ${esc(r.passNo)}</span>` : ""}
-            <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
+    area.innerHTML = filtered.map(r => {
+      const nrsTokens = parseNumberTokens(r.nrs);
+      const passTokens = parseNumberTokens(r.passNo);
+      const nrsBadges = nrsTokens.length
+        ? nrsTokens.map(n => `<span class="b b-nrs">NRS ${esc(n)}</span>`).join("")
+        : `<span class="b b-nonrs">待補單號</span>`;
+      const passBadges = passTokens
+        .map(p => `<span class="b b-pass">放行 ${esc(p)}</span>`)
+        .join("");
+
+      return `
+        <div class="item ${r.urgent ? "urgent" : ""}">
+          <div class="item-top">
+            <div class="badges">
+              ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
+              ${nrsBadges}
+              ${passBadges}
+              <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
+            </div>
+            <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
           </div>
-          <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
-        </div>
 
-        <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
-        <div class="item-sub">
-          建檔：${esc(r.createdAt)}
-          ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
-        </div>
-
-        ${r.photos && r.photos.length ? `
-          <div class="thumbs" style="margin-bottom:4px;">
-            ${r.photos.map(p => renderThumbHtml(p)).join("")}
+          <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
+          <div class="item-sub">
+            建檔：${esc(r.createdAt)}
+            ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
           </div>
-        ` : ""}
 
-        <div class="item-actions">
-          <button type="button" class="btn-add-photo" data-edit-id="${r.id}">📎 補單號 / 照片</button>
+          ${r.photos && r.photos.length ? `
+            <div class="thumbs" style="margin-bottom:4px;">
+              ${r.photos.map(p => renderThumbHtml(p)).join("")}
+            </div>
+          ` : ""}
+
+          <div class="item-actions">
+            <button type="button" class="btn-add-photo" data-edit-id="${r.id}">✏️ 修改紀錄 / 補單號・照片</button>
+          </div>
         </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   document.getElementById("cat-pills").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-cat]");
     if (!btn) return;
     selectedCat = btn.dataset.cat;
-    const cls = { SPECIAL: "on-red", RETURN: "on-amber", NEW: "on-green", GENERAL: "on-blue" };
-    document.querySelectorAll("#cat-pills .pill").forEach(p => {
-      p.className = "pill" + (p.dataset.cat === selectedCat ? " " + cls[selectedCat] : "");
-    });
+    applyCatPillsUI("#cat-pills", selectedCat);
+  });
+
+  document.getElementById("edit-cat-pills").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-cat]");
+    if (!btn) return;
+    editSelectedCat = btn.dataset.cat;
+    applyCatPillsUI("#edit-cat-pills", editSelectedCat);
   });
 
   async function handleNewFiles(fileList, targetList, renderFn, mode) {
-    let added = 0;
+    const newlyAdded = [];
     for (const f of fileList) {
-      targetList.push(await compressImage(f));
-      added += 1;
+      const compressed = await compressImage(f);
+      targetList.push(compressed);
+      newlyAdded.push(compressed);
     }
     renderFn();
-    if (added > 0) {
-      await detectNumbersFromPhotos(targetList, mode);
+    if (newlyAdded.length > 0) {
+      await detectNumbersFromPhotos(newlyAdded, mode);
     }
   }
 
@@ -726,9 +847,17 @@
     }
   });
 
+  document.getElementById("edit-thumbs").addEventListener("click", (e) => {
+    const del = e.target.closest("[data-del-edit-photo]");
+    if (del) {
+      editPhotos.splice(Number(del.dataset.delEditPhoto), 1);
+      renderEditThumbs();
+    }
+  });
+
   document.getElementById("btn-save").addEventListener("click", async () => {
-    const nrs = document.getElementById("in-nrs").value.trim();
-    const passNo = document.getElementById("in-pass").value.trim();
+    const nrs = normalizeNumberListStr(document.getElementById("in-nrs").value);
+    const passNo = normalizeNumberListStr(document.getElementById("in-pass").value);
     const plant = document.getElementById("in-plant").value.trim() || "美光 F16";
     const part = document.getElementById("in-part").value.trim();
     const note = document.getElementById("in-note").value.trim();
@@ -739,8 +868,12 @@
       return;
     }
 
-    if (nrs && records.some(r => r.nrs === nrs)) {
-      if (!confirm(`單號 NRS ${nrs} 已經記過了，確定還要新增一筆嗎？`)) return;
+    const newNrsTokens = parseNumberTokens(nrs);
+    const dupNrs = newNrsTokens.find(tok =>
+      records.some(r => parseNumberTokens(r.nrs).includes(tok))
+    );
+    if (dupNrs) {
+      if (!confirm(`單號 NRS ${dupNrs} 已經記過了，確定還要新增一筆嗎？`)) return;
     }
 
     records.unshift({
@@ -781,10 +914,6 @@
 
   document.getElementById("q-text").addEventListener("input", render);
 
-  function renderEditThumbs() {
-    document.getElementById("edit-thumbs").innerHTML = editPhotos.map(p => `<div class="thumb"><img src="${esc(toThumbSrc(p))}" /></div>`).join("");
-  }
-
   document.getElementById("list-area").addEventListener("click", async (e) => {
     const delBtn = e.target.closest("[data-del-id]");
     if (delBtn) {
@@ -800,10 +929,15 @@
       const r = records.find(x => x.id === editBtn.dataset.editId);
       if (!r) return;
       editingId = r.id;
-      editPhotos = [...(r.photos || [])];
-      document.getElementById("edit-nrs").value = r.nrs || "";
-      document.getElementById("edit-pass").value = r.passNo || "";
+      editSelectedCat = r.cat || "SPECIAL";
+      applyCatPillsUI("#edit-cat-pills", editSelectedCat);
+      document.getElementById("edit-urgent").checked = Boolean(r.urgent);
+      document.getElementById("edit-nrs").value = normalizeNumberListStr(r.nrs || "");
+      document.getElementById("edit-pass").value = normalizeNumberListStr(r.passNo || "");
+      document.getElementById("edit-plant").value = r.plant || "美光 F16";
+      document.getElementById("edit-part").value = r.part || "";
       document.getElementById("edit-note").value = r.note || "";
+      editPhotos = [...(r.photos || [])];
       const editHint = document.getElementById("edit-ocr-hint");
       editHint.classList.remove("show");
       editHint.innerHTML = "";
@@ -827,13 +961,27 @@
   });
 
   document.getElementById("btn-save-edit").addEventListener("click", async () => {
-    const newNrs = document.getElementById("edit-nrs").value.trim();
-    const newPass = document.getElementById("edit-pass").value.trim();
+    const newNrs = normalizeNumberListStr(document.getElementById("edit-nrs").value);
+    const newPass = normalizeNumberListStr(document.getElementById("edit-pass").value);
+    const newPlant = document.getElementById("edit-plant").value.trim() || "美光 F16";
+    const newPart = document.getElementById("edit-part").value.trim() || "未填工件名稱（見照片）";
     const newNote = document.getElementById("edit-note").value.trim();
-    records = records.map(r => r.id === editingId ? { ...r, nrs: newNrs, passNo: newPass, note: newNote, photos: editPhotos } : r);
+    const newUrgent = document.getElementById("edit-urgent").checked;
+
+    records = records.map(r => r.id === editingId ? {
+      ...r,
+      cat: editSelectedCat,
+      urgent: newUrgent,
+      nrs: newNrs,
+      passNo: newPass,
+      plant: newPlant,
+      part: newPart,
+      note: newNote,
+      photos: editPhotos
+    } : r);
     document.getElementById("modal-edit").classList.remove("open");
     await save();
-    toast("📎 已更新單號與照片");
+    toast("✅ 已更新紀錄");
   });
 
   document.getElementById("btn-close-edit").addEventListener("click", () => {
@@ -934,4 +1082,5 @@
 })();
 </script>
 </body>
+
 </html>
