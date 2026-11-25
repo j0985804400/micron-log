@@ -20,8 +20,8 @@
     button { cursor: pointer; border: none; border-radius: 10px; font-weight: 700; transition: 0.12s; touch-action: manipulation; }
     button:active { transform: scale(0.97); }
     input {
-      width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 10px;
-      font-size: 16px; background: #fff; color: var(--text);
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 15px; background: #fff; color: var(--text); min-height: 44px;
     }
     input:focus { outline: none; border-color: var(--blue); }
 
@@ -37,12 +37,17 @@
     .wrap { max-width: 580px; margin: 0 auto; padding: 12px; }
 
     .box {
-      background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 14px;
+      background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px;
       border: 1.5px solid #e2e8f0; box-shadow: 0 2px 6px rgba(15,23,42,0.04);
     }
     .sec-title { font-size: 15px; font-weight: 800; color: var(--blue); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px; }
+    .label {
+      display: flex; align-items: center; min-height: 30px;
+      font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; line-height: 1.25;
+    }
+    .field { margin-bottom: 10px; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .row2 .field { margin-bottom: 0; }
 
     .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
     .pill {
@@ -54,18 +59,18 @@
     .pill.on-green { background: var(--green); color: #fff; border-color: #059669; }
     .pill.on-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
 
-    .photo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
+    .photo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; margin-bottom: 10px; }
     .btn-cam {
-      flex: 1 1 150px; background: #eff6ff; color: var(--blue); border: 1.5px dashed #93c5fd;
-      padding: 11px; font-size: 13px; text-align: center; border-radius: 10px; font-weight: 700; cursor: pointer;
+      flex: 1 1 135px; background: #eff6ff; color: var(--blue); border: 1.5px dashed #93c5fd;
+      padding: 10px; font-size: 13px; text-align: center; border-radius: 10px; font-weight: 700; cursor: pointer;
     }
     .btn-album {
-      flex: 1 1 150px; background: #f0fdf4; color: #15803d; border: 1.5px dashed #86efac;
-      padding: 11px; font-size: 13px; text-align: center; border-radius: 10px; font-weight: 700; cursor: pointer;
+      flex: 1 1 135px; background: #f0fdf4; color: #15803d; border: 1.5px dashed #86efac;
+      padding: 10px; font-size: 13px; text-align: center; border-radius: 10px; font-weight: 700; cursor: pointer;
     }
     .btn-ocr {
       background: #fef3c7; color: #92400e; border: 1.5px solid #f59e0b;
-      padding: 11px 12px; font-size: 13px; border-radius: 10px; white-space: nowrap;
+      padding: 10px 12px; font-size: 13px; border-radius: 10px; white-space: nowrap;
     }
     .btn-ocr:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -91,7 +96,7 @@
       background: var(--red); color: #fff; font-size: 13px; padding: 0; line-height: 1;
     }
 
-    .btn-save { width: 100%; background: var(--blue); color: #fff; padding: 13px; font-size: 16px; border-radius: 11px; }
+    .btn-save { width: 100%; background: var(--blue); color: #fff; padding: 12px; font-size: 15px; border-radius: 11px; }
 
     .filter-row { display: flex; gap: 6px; margin-top: 8px; }
     .f-tab { flex: 1; padding: 8px 6px; font-size: 13px; background: #e2e8f0; color: #334155; border-radius: 8px; }
@@ -110,23 +115,23 @@
     .m-chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 
     .fold-tools {
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
       margin-bottom: 8px; padding: 0 2px; font-size: 12px; color: #475569;
     }
-    .fold-btns { display: flex; gap: 6px; }
+    .fold-btns { display: flex; gap: 6px; flex-shrink: 0; }
     .btn-fold-mini {
       background: #e2e8f0; color: #1e293b; padding: 5px 9px; font-size: 12px; border-radius: 7px;
     }
 
-    .month-section { margin-bottom: 14px; }
+    .month-section { margin-bottom: 12px; }
     .month-hdr {
       background: #0f172a; color: #fff; padding: 8px 12px; border-radius: 10px;
       font-size: 14px; font-weight: 800; display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
     .month-hdr-sub { font-size: 12px; color: #cbd5e1; font-weight: 700; }
 
-    .day-group { margin-bottom: 8px; }
+    .day-group { margin-bottom: 7px; }
     .day-hdr {
       width: 100%; background: #e2e8f0; color: #0f172a; border: 1px solid #cbd5e1;
       padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 800;
@@ -144,7 +149,7 @@
 
     .item {
       background: var(--card); border: 1.5px solid var(--border); border-radius: 12px;
-      padding: 12px; margin-bottom: 9px;
+      padding: 12px; margin-bottom: 8px;
     }
     .item.urgent { border-left: 6px solid var(--red); background: #fffafa; }
     .item-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
@@ -235,12 +240,12 @@
     </div>
 
     <div class="row2">
-      <div>
-        <span class="label">No. NRS 單號（6碼單一單號）</span>
+      <div class="field">
+        <span class="label">No. NRS（6碼單一）</span>
         <input type="text" id="in-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
       </div>
-      <div>
-        <span class="label">放行單號（8開頭7碼，可多張逗號分隔）</span>
+      <div class="field">
+        <span class="label">放行單號（可多張逗號分隔）</span>
         <input type="text" id="in-pass" placeholder="例：8354299, 8354300" />
       </div>
     </div>
@@ -248,22 +253,22 @@
     <div id="in-ocr-hint" class="ocr-hint"></div>
 
     <div class="row2">
-      <div>
-        <span class="label">紀錄日期（預設今天，可選過去補登）</span>
-        <input type="date" id="in-date" />
-      </div>
-      <div>
+      <div class="field">
         <span class="label">廠區 / 客戶</span>
         <input type="text" id="in-plant" value="美光 F16" />
+      </div>
+      <div class="field">
+        <span class="label">工件名稱 / 料號 *</span>
+        <input type="text" id="in-part" placeholder="必填或拍單據" />
       </div>
     </div>
 
     <div class="row2">
-      <div>
-        <span class="label">機台 / 工件名稱 / 料號 *</span>
-        <input type="text" id="in-part" />
+      <div class="field">
+        <span class="label">補登 / 紀錄日期</span>
+        <input type="date" id="in-date" />
       </div>
-      <div>
+      <div class="field">
         <span class="label">備註</span>
         <input type="text" id="in-note" placeholder="補充說明..." />
       </div>
@@ -286,7 +291,7 @@
   </div>
 
   <div class="box" style="padding:12px;">
-    <input type="text" id="q-text" placeholder="🔍 搜尋 NRS單號、放行單號、工件名稱、料號或備註..." />
+    <input type="text" id="q-text" placeholder="🔍 搜尋 NRS、放行單號、工件名稱或備註..." />
     <div class="filter-row">
       <button type="button" class="f-tab active" data-filter="ALL">全部 (<span id="cnt-all">0</span>)</button>
       <button type="button" class="f-tab" data-filter="URGENT">🚨 急件 (<span id="cnt-urg">0</span>)</button>
@@ -327,11 +332,11 @@
     </div>
 
     <div class="row2">
-      <div>
-        <span class="label">No. NRS 單號（6碼單一單號）</span>
+      <div class="field">
+        <span class="label">No. NRS（6碼單一）</span>
         <input type="text" id="edit-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
       </div>
-      <div>
+      <div class="field">
         <span class="label">放行單號（可多張逗號分隔）</span>
         <input type="text" id="edit-pass" placeholder="例：8354299, 8354300" />
       </div>
@@ -339,22 +344,22 @@
     <div id="edit-ocr-hint" class="ocr-hint"></div>
 
     <div class="row2">
-      <div>
-        <span class="label">紀錄日期（可修改歸屬日期）</span>
-        <input type="date" id="edit-date" />
-      </div>
-      <div>
+      <div class="field">
         <span class="label">廠區 / 客戶</span>
         <input type="text" id="edit-plant" placeholder="美光 F16" />
+      </div>
+      <div class="field">
+        <span class="label">工件名稱 / 料號</span>
+        <input type="text" id="edit-part" />
       </div>
     </div>
 
     <div class="row2">
-      <div>
-        <span class="label">機台 / 工件名稱 / 料號</span>
-        <input type="text" id="edit-part" />
+      <div class="field">
+        <span class="label">補登 / 紀錄日期</span>
+        <input type="date" id="edit-date" />
       </div>
-      <div>
+      <div class="field">
         <span class="label">備註</span>
         <input type="text" id="edit-note" placeholder="補充說明..." />
       </div>
@@ -432,7 +437,6 @@
   let editSelectedCat = "SPECIAL";
   let editPhotos = [];
 
-  // NRS 只會有一個（取單一單號並清理多餘空白/逗號）
   function normalizeSingleNrs(raw) {
     if (Array.isArray(raw)) {
       const first = raw.map(x => String(x || "").trim()).find(Boolean);
@@ -445,7 +449,6 @@
     return tokens[0] || "";
   }
 
-  // 放行單才會有很多張
   function parsePassTokens(raw) {
     if (Array.isArray(raw)) {
       return Array.from(new Set(raw.map(x => String(x || "").trim()).filter(Boolean)));
@@ -792,11 +795,9 @@
       const nrsList = parsePassTokens(data.nrsList || data.nrs || []);
       const passList = parsePassTokens(data.passList || data.passNo || []);
 
-      // NRS 只會有一個：若欄位目前空白且抓到唯一一筆就自動填入；若抓到多筆候選則列按鈕供單選覆蓋
       if (nrsList.length === 1 && !normalizeSingleNrs(nrsInput.value)) {
         nrsInput.value = nrsList[0];
       }
-      // 放行單會有多張：自動累加不重複的 8 開頭 7 碼放行單號
       if (passList.length > 0) {
         appendManyUniquePassNumbers(passInput, passList);
       }
@@ -1023,7 +1024,7 @@
     }
 
     foldTools.style.display = "flex";
-    document.getElementById("fold-summary").textContent = `共 ${monthGroupsMap.size} 個月・${allDayKeys.length} 天（點日期列可摺疊/展開）`;
+    document.getElementById("fold-summary").textContent = `共 ${monthGroupsMap.size} 個月・${allDayKeys.length} 天`;
 
     const sortedMonths = Array.from(monthGroupsMap.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
 
@@ -1143,7 +1144,6 @@
     }
   });
 
-  // 初始化新增區的日期為今天
   const inDateEl = document.getElementById("in-date");
   inDateEl.value = getTodayDateInputStr();
 
@@ -1184,7 +1184,6 @@
       createdAt: createdStr
     });
 
-    // 自動展開所選日期（方便立刻看到剛補登或新增的該天紀錄）
     collapsedDays[dateVal] = false;
     if (selectedMonth !== "ALL" && !dateVal.startsWith(selectedMonth)) {
       selectedMonth = "ALL";
