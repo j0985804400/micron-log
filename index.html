@@ -125,6 +125,84 @@
       position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
       background: var(--red); color: #fff; font-size: 13px; padding: 0; line-height: 1;
     }
+    .thumb-crop {
+      position: absolute; bottom: -5px; left: -5px; width: 24px; height: 24px; border-radius: 50%;
+      background: #0f172a; color: #fff; border: 1.5px solid #fff;
+      font-size: 11px; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* 圖片裁切／旋轉／文件增強彈窗 */
+    #modal-crop { z-index: 65; padding: 10px; }
+    .crop-modal-box {
+      background: #0f172a; color: #fff; border-radius: 14px; padding: 12px;
+      width: 100%; max-width: 520px; max-height: 94vh; display: flex; flex-direction: column;
+    }
+    .crop-top {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; font-size: 14px; font-weight: 800;
+    }
+    .crop-stage {
+      position: relative; width: 100%; flex: 1; min-height: 220px;
+      display: flex; align-items: center; justify-content: center;
+      background: #020617; border-radius: 10px; overflow: hidden;
+      touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    .crop-canvas-wrap {
+      position: relative; display: inline-block; line-height: 0; overflow: hidden;
+      touch-action: none;
+    }
+    #crop-canvas {
+      display: block; max-width: 100%; max-height: 58vh; width: auto; height: auto;
+    }
+    .crop-box {
+      position: absolute; border: 2px solid #38bdf8;
+      box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.62);
+      cursor: move; touch-action: none;
+    }
+    .crop-grid {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0.28) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.28) 1px, transparent 1px);
+      background-size: 33.333% 33.333%;
+    }
+    .crop-handle {
+      position: absolute; width: 32px; height: 32px;
+      transform: translate(-50%, -50%); touch-action: none;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .crop-handle::after {
+      content: ""; width: 14px; height: 14px; border-radius: 50%;
+      background: #38bdf8; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    .crop-handle[data-h="nw"] { top: 0; left: 0; cursor: nwse-resize; }
+    .crop-handle[data-h="ne"] { top: 0; left: 100%; cursor: nesw-resize; }
+    .crop-handle[data-h="sw"] { top: 100%; left: 0; cursor: nesw-resize; }
+    .crop-handle[data-h="se"] { top: 100%; left: 100%; cursor: nwse-resize; }
+    .crop-handle[data-h="n"] { top: 0; left: 50%; cursor: ns-resize; }
+    .crop-handle[data-h="s"] { top: 100%; left: 50%; cursor: ns-resize; }
+    .crop-handle[data-h="w"] { top: 50%; left: 0; cursor: ew-resize; }
+    .crop-handle[data-h="e"] { top: 50%; left: 100%; cursor: ew-resize; }
+    .crop-handle[data-h="n"]::after,
+    .crop-handle[data-h="s"]::after { width: 22px; height: 8px; border-radius: 4px; }
+    .crop-handle[data-h="w"]::after,
+    .crop-handle[data-h="e"]::after { width: 8px; height: 22px; border-radius: 4px; }
+
+    .crop-tools {
+      display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px;
+    }
+    .btn-crop-tool {
+      background: #1e293b; color: #e2e8f0; border: 1px solid #475569;
+      padding: 8px 11px; font-size: 12px; border-radius: 8px;
+    }
+    .btn-crop-tool.on {
+      background: #0284c7; color: #fff; border-color: #38bdf8;
+    }
+    .crop-actions {
+      display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 10px;
+    }
+    .btn-crop-skip { background: #334155; color: #f8fafc; padding: 11px; font-size: 14px; }
+    .btn-crop-apply { background: #2563eb; color: #fff; padding: 11px; font-size: 14px; }
 
     .btn-save { width: 100%; background: var(--blue); color: #fff; padding: 12px; font-size: 15px; border-radius: 11px; }
 
@@ -606,6 +684,41 @@
       <button type="button" class="btn-retry-img" id="btn-retry-img">重載</button>
       <a id="btn-open-orig" class="btn-open-orig" href="#" target="_blank" rel="noopener noreferrer">開 Drive 原圖</a>
       <button type="button" class="btn-close-img" id="btn-close-img">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- 圖片裁切／旋轉／文件增強視窗 -->
+<div id="modal-crop" class="modal">
+  <div class="crop-modal-box">
+    <div class="crop-top">
+      <span>✂️ 裁切與掃描增強</span>
+      <button type="button" id="btn-crop-cancel" style="background:#334155; color:#fff; padding:4px 10px; font-size:12px;">取消</button>
+    </div>
+    <div class="crop-stage" id="crop-stage">
+      <div class="crop-canvas-wrap" id="crop-canvas-wrap">
+        <canvas id="crop-canvas"></canvas>
+        <div class="crop-box" id="crop-box">
+          <div class="crop-grid"></div>
+          <div class="crop-handle" data-h="nw"></div>
+          <div class="crop-handle" data-h="ne"></div>
+          <div class="crop-handle" data-h="sw"></div>
+          <div class="crop-handle" data-h="se"></div>
+          <div class="crop-handle" data-h="n"></div>
+          <div class="crop-handle" data-h="s"></div>
+          <div class="crop-handle" data-h="w"></div>
+          <div class="crop-handle" data-h="e"></div>
+        </div>
+      </div>
+    </div>
+    <div class="crop-tools">
+      <button type="button" class="btn-crop-tool" id="btn-crop-rotate">↻ 旋轉 90°</button>
+      <button type="button" class="btn-crop-tool" id="btn-crop-enhance">✨ 文件增強</button>
+      <button type="button" class="btn-crop-tool" id="btn-crop-reset">⬜ 重設全圖</button>
+    </div>
+    <div class="crop-actions">
+      <button type="button" class="btn-crop-skip" id="btn-crop-skip">略過直接用原圖</button>
+      <button type="button" class="btn-crop-apply" id="btn-crop-apply">✅ 套用裁切</button>
     </div>
   </div>
 </div>
@@ -1131,6 +1244,7 @@
     document.getElementById("in-thumbs").innerHTML = draftPhotos.map((src, i) => `
       <div class="thumb">
         <img src="${esc(toThumbSrc(src))}" data-raw="${esc(src)}" data-orig="${esc(toDriveViewUrl(src))}" data-gallery="__draft__" data-gidx="${i}" />
+        ${typeof src === "string" && src.startsWith("data:image/") ? `<button type="button" class="thumb-crop" data-crop-draft="${i}" title="裁切照片">✂️</button>` : ""}
         <button type="button" class="thumb-del" data-del-draft="${i}">×</button>
       </div>
     `).join("");
@@ -1140,6 +1254,7 @@
     document.getElementById("edit-thumbs").innerHTML = editPhotos.map((src, i) => `
       <div class="thumb">
         <img src="${esc(toThumbSrc(src))}" data-raw="${esc(src)}" data-orig="${esc(toDriveViewUrl(src))}" data-gallery="__edit__" data-gidx="${i}" />
+        ${typeof src === "string" && src.startsWith("data:image/") ? `<button type="button" class="thumb-crop" data-crop-edit="${i}" title="裁切照片">✂️</button>` : ""}
         <button type="button" class="thumb-del" data-del-edit-photo="${i}">×</button>
       </div>
     `).join("");
@@ -1534,12 +1649,234 @@
     syncNrsFieldVisibility("edit", editSelectedCat);
   });
 
+  // === 裁切／旋轉／文件增強模組（純 Canvas 零依賴） ===
+  const modalCrop = document.getElementById("modal-crop");
+  const cropCanvas = document.getElementById("crop-canvas");
+  const cropBoxEl = document.getElementById("crop-box");
+  const btnCropEnhance = document.getElementById("btn-crop-enhance");
+
+  let cropState = {
+    img: null,
+    origDataUrl: "",
+    rotation: 0,      // 0 | 90 | 180 | 270
+    enhanced: false,
+    // 歸一化裁切框 (0..1)
+    rx: 0.04, ry: 0.04, rw: 0.92, rh: 0.92,
+    resolve: null
+  };
+
+  function renderCropCanvas() {
+    if (!cropState.img) return;
+    const img = cropState.img;
+    const swap = cropState.rotation % 180 !== 0;
+    const srcW = swap ? img.naturalHeight : img.naturalWidth;
+    const srcH = swap ? img.naturalWidth : img.naturalHeight;
+
+    // 預覽畫布限制最長邊 1000px 保持行動端流暢
+    const maxPreview = 1000;
+    let cw = srcW, ch = srcH;
+    if (cw > maxPreview || ch > maxPreview) {
+      if (cw > ch) { ch = Math.round(ch * maxPreview / cw); cw = maxPreview; }
+      else { cw = Math.round(cw * maxPreview / ch); ch = maxPreview; }
+    }
+    cropCanvas.width = cw;
+    cropCanvas.height = ch;
+
+    const ctx = cropCanvas.getContext("2d");
+    ctx.save();
+    ctx.clearRect(0, 0, cw, ch);
+    if (cropState.enhanced) {
+      try { ctx.filter = "contrast(1.32) brightness(1.06) saturate(0.82)"; } catch (_) {}
+    } else {
+      try { ctx.filter = "none"; } catch (_) {}
+    }
+    ctx.translate(cw / 2, ch / 2);
+    ctx.rotate((cropState.rotation * Math.PI) / 180);
+    const drawW = swap ? ch : cw;
+    const drawH = swap ? cw : ch;
+    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+
+    updateCropBoxStyle();
+  }
+
+  function updateCropBoxStyle() {
+    cropBoxEl.style.left = (cropState.rx * 100) + "%";
+    cropBoxEl.style.top = (cropState.ry * 100) + "%";
+    cropBoxEl.style.width = (cropState.rw * 100) + "%";
+    cropBoxEl.style.height = (cropState.rh * 100) + "%";
+  }
+
+  function exportCroppedDataUrl() {
+    const img = cropState.img;
+    if (!img) return cropState.origDataUrl;
+    const swap = cropState.rotation % 180 !== 0;
+    const fullW = swap ? img.naturalHeight : img.naturalWidth;
+    const fullH = swap ? img.naturalWidth : img.naturalHeight;
+
+    // 先在離屏畫布產生旋轉與增強後的完整圖
+    const temp = document.createElement("canvas");
+    temp.width = fullW;
+    temp.height = fullH;
+    const tctx = temp.getContext("2d");
+    tctx.save();
+    if (cropState.enhanced) {
+      try { tctx.filter = "contrast(1.32) brightness(1.06) saturate(0.82)"; } catch (_) {}
+    }
+    tctx.translate(fullW / 2, fullH / 2);
+    tctx.rotate((cropState.rotation * Math.PI) / 180);
+    tctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+    tctx.restore();
+
+    const sx = Math.max(0, Math.round(cropState.rx * fullW));
+    const sy = Math.max(0, Math.round(cropState.ry * fullH));
+    const sw = Math.max(20, Math.min(fullW - sx, Math.round(cropState.rw * fullW)));
+    const sh = Math.max(20, Math.min(fullH - sy, Math.round(cropState.rh * fullH)));
+
+    const maxOut = 1600;
+    let ow = sw, oh = sh;
+    if (ow > maxOut || oh > maxOut) {
+      if (ow > oh) { oh = Math.round(oh * maxOut / ow); ow = maxOut; }
+      else { ow = Math.round(ow * maxOut / oh); oh = maxOut; }
+    }
+    const out = document.createElement("canvas");
+    out.width = ow;
+    out.height = oh;
+    out.getContext("2d").drawImage(temp, sx, sy, sw, sh, 0, 0, ow, oh);
+    return out.toDataURL("image/jpeg", 0.86);
+  }
+
+  function openCropModal(dataUrl) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        cropState.img = img;
+        cropState.origDataUrl = dataUrl;
+        cropState.rotation = 0;
+        cropState.enhanced = false;
+        cropState.rx = 0.04;
+        cropState.ry = 0.04;
+        cropState.rw = 0.92;
+        cropState.rh = 0.92;
+        cropState.resolve = resolve;
+        btnCropEnhance.classList.remove("on");
+        btnCropEnhance.textContent = "✨ 文件增強";
+        modalCrop.classList.add("open");
+        renderCropCanvas();
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  function finishCropModal(resultUrl) {
+    modalCrop.classList.remove("open");
+    const cb = cropState.resolve;
+    cropState.resolve = null;
+    cropState.img = null;
+    if (cb) cb(resultUrl);
+  }
+
+  // 裁切框拖曳與八向縮放（Pointer Events 統一支援觸控與滑鼠）
+  let dragInfo = null;
+  cropBoxEl.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    const rect = cropCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const handleEl = e.target.closest("[data-h]");
+    dragInfo = {
+      type: handleEl ? handleEl.dataset.h : "move",
+      startX: e.clientX,
+      startY: e.clientY,
+      rx: cropState.rx,
+      ry: cropState.ry,
+      rw: cropState.rw,
+      rh: cropState.rh,
+      rectW: rect.width,
+      rectH: rect.height
+    };
+    try { cropBoxEl.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  cropBoxEl.addEventListener("pointermove", (e) => {
+    if (!dragInfo) return;
+    e.preventDefault();
+    const dx = (e.clientX - dragInfo.startX) / dragInfo.rectW;
+    const dy = (e.clientY - dragInfo.startY) / dragInfo.rectH;
+    const minSize = 0.12;
+    let { rx, ry, rw, rh } = dragInfo;
+    const t = dragInfo.type;
+
+    if (t === "move") {
+      rx = Math.max(0, Math.min(1 - rw, rx + dx));
+      ry = Math.max(0, Math.min(1 - rh, ry + dy));
+    } else {
+      let left = rx;
+      let top = ry;
+      let right = rx + rw;
+      let bottom = ry + rh;
+      if (t.includes("w")) left = Math.max(0, Math.min(right - minSize, left + dx));
+      if (t.includes("e")) right = Math.min(1, Math.max(left + minSize, right + dx));
+      if (t.includes("n")) top = Math.max(0, Math.min(bottom - minSize, top + dy));
+      if (t.includes("s")) bottom = Math.min(1, Math.max(top + minSize, bottom + dy));
+      rx = left; ry = top; rw = right - left; rh = bottom - top;
+    }
+    cropState.rx = rx;
+    cropState.ry = ry;
+    cropState.rw = rw;
+    cropState.rh = rh;
+    updateCropBoxStyle();
+  });
+
+  function endCropDrag(e) {
+    if (!dragInfo) return;
+    try { cropBoxEl.releasePointerCapture(e.pointerId); } catch (_) {}
+    dragInfo = null;
+  }
+  cropBoxEl.addEventListener("pointerup", endCropDrag);
+  cropBoxEl.addEventListener("pointercancel", endCropDrag);
+
+  document.getElementById("btn-crop-rotate").addEventListener("click", () => {
+    cropState.rotation = (cropState.rotation + 90) % 360;
+    cropState.rx = 0.04; cropState.ry = 0.04; cropState.rw = 0.92; cropState.rh = 0.92;
+    renderCropCanvas();
+  });
+
+  btnCropEnhance.addEventListener("click", () => {
+    cropState.enhanced = !cropState.enhanced;
+    btnCropEnhance.classList.toggle("on", cropState.enhanced);
+    btnCropEnhance.textContent = cropState.enhanced ? "✨ 已增強" : "✨ 文件增強";
+    renderCropCanvas();
+  });
+
+  document.getElementById("btn-crop-reset").addEventListener("click", () => {
+    cropState.rx = 0; cropState.ry = 0; cropState.rw = 1; cropState.rh = 1;
+    updateCropBoxStyle();
+  });
+
+  document.getElementById("btn-crop-cancel").addEventListener("click", () => finishCropModal(null));
+  document.getElementById("btn-crop-skip").addEventListener("click", () => finishCropModal(cropState.origDataUrl));
+  document.getElementById("btn-crop-apply").addEventListener("click", () => finishCropModal(exportCroppedDataUrl()));
+
   async function handleNewFiles(fileList, targetList, renderFn, mode) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
     const newlyAdded = [];
-    for (const f of fileList) {
-      const compressed = await compressImage(f);
-      targetList.push(compressed);
-      newlyAdded.push(compressed);
+    if (files.length === 1) {
+      // 單張拍照或選圖：自動開啟裁切與掃描增強視窗
+      const compressed = await compressImage(files[0]);
+      const finalImg = await openCropModal(compressed);
+      if (finalImg) {
+        targetList.push(finalImg);
+        newlyAdded.push(finalImg);
+      }
+    } else {
+      // 多張批次選圖：直接入列（每張縮圖左下角附 ✂️ 可隨時單張裁切）
+      for (const f of files) {
+        const compressed = await compressImage(f);
+        targetList.push(compressed);
+        newlyAdded.push(compressed);
+      }
     }
     renderFn();
     if (newlyAdded.length > 0) {
@@ -1561,7 +1898,20 @@
     await detectNumbersFromPhotos(draftPhotos, "in");
   });
 
-  document.getElementById("in-thumbs").addEventListener("click", (e) => {
+  document.getElementById("in-thumbs").addEventListener("click", async (e) => {
+    const cropBtn = e.target.closest("[data-crop-draft]");
+    if (cropBtn) {
+      const idx = Number(cropBtn.dataset.cropDraft);
+      if (draftPhotos[idx]) {
+        const cropped = await openCropModal(draftPhotos[idx]);
+        if (cropped) {
+          draftPhotos[idx] = cropped;
+          renderDraftThumbs();
+          await detectNumbersFromPhotos([cropped], "in");
+        }
+      }
+      return;
+    }
     const del = e.target.closest("[data-del-draft]");
     if (del) {
       draftPhotos.splice(Number(del.dataset.delDraft), 1);
@@ -1569,7 +1919,20 @@
     }
   });
 
-  document.getElementById("edit-thumbs").addEventListener("click", (e) => {
+  document.getElementById("edit-thumbs").addEventListener("click", async (e) => {
+    const cropBtn = e.target.closest("[data-crop-edit]");
+    if (cropBtn) {
+      const idx = Number(cropBtn.dataset.cropEdit);
+      if (editPhotos[idx]) {
+        const cropped = await openCropModal(editPhotos[idx]);
+        if (cropped) {
+          editPhotos[idx] = cropped;
+          renderEditThumbs();
+          await detectNumbersFromPhotos([cropped], "edit");
+        }
+      }
+      return;
+    }
     const del = e.target.closest("[data-del-edit-photo]");
     if (del) {
       editPhotos.splice(Number(del.dataset.delEditPhoto), 1);
