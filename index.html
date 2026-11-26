@@ -14,6 +14,7 @@
       --blue: #1d4ed8;
       --red: #dc2626;
       --green: #059669;
+      --amber: #d97706;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Segoe UI", sans-serif; }
     body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 48px; }
@@ -26,15 +27,42 @@
     input:focus { outline: none; border-color: var(--blue); }
 
     .header {
-      background: #0f172a; color: #fff; padding: 12px 16px;
+      background: #0f172a; color: #fff; padding: 11px 16px;
       display: flex; justify-content: space-between; align-items: center;
-      position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      position: sticky; top: 0; z-index: 30;
     }
     .header-title { font-size: 16px; font-weight: 800; letter-spacing: 0.3px; }
     .header-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-    .btn-cfg { background: #334155; color: #f8fafc; padding: 7px 11px; font-size: 12px; border-radius: 8px; }
+    .btn-cfg { background: #334155; color: #f8fafc; padding: 7px 11px; font-size: 12px; border-radius: 8px; flex-shrink: 0; }
+
+    /* 頂部主分頁切換列 */
+    .main-tabs {
+      position: sticky; top: 56px; z-index: 25;
+      background: #1e293b; padding: 8px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+    }
+    .main-tabs-inner {
+      max-width: 580px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      background: #0f172a; padding: 4px; border-radius: 12px;
+    }
+    .main-tab {
+      padding: 10px 8px; font-size: 14px; font-weight: 800; border-radius: 9px;
+      background: transparent; color: #94a3b8;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .main-tab.active {
+      background: #2563eb; color: #ffffff;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.35);
+    }
+    .tab-badge {
+      background: rgba(255,255,255,0.18); color: #fff;
+      font-size: 11px; padding: 1px 7px; border-radius: 99px;
+    }
 
     .wrap { max-width: 580px; margin: 0 auto; padding: 12px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     .box {
       background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px;
@@ -42,7 +70,7 @@
     }
     .sec-title { font-size: 15px; font-weight: 800; color: var(--blue); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .label {
-      display: flex; align-items: center; min-height: 30px;
+      display: flex; align-items: center; min-height: 28px;
       font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; line-height: 1.25;
     }
     .field { margin-bottom: 10px; }
@@ -55,8 +83,8 @@
       background: #f8fafc; color: #334155; border-radius: 9px;
     }
     .pill.on-red { background: var(--red); color: #fff; border-color: var(--red); }
-    .pill.on-amber { background: #d97706; color: #fff; border-color: #d97706; }
-    .pill.on-green { background: var(--green); color: #fff; border-color: #059669; }
+    .pill.on-amber { background: var(--amber); color: #fff; border-color: var(--amber); }
+    .pill.on-green { background: var(--green); color: #fff; border-color: var(--green); }
     .pill.on-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
 
     .photo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; margin-bottom: 10px; }
@@ -98,31 +126,91 @@
 
     .btn-save { width: 100%; background: var(--blue); color: #fff; padding: 12px; font-size: 15px; border-radius: 11px; }
 
-    .filter-row { display: flex; gap: 6px; margin-top: 8px; }
-    .f-tab { flex: 1; padding: 8px 6px; font-size: 13px; background: #e2e8f0; color: #334155; border-radius: 8px; }
-    .f-tab.active { background: #0f172a; color: #fff; }
-
-    .month-bar {
-      display: flex; align-items: center; gap: 6px; overflow-x: auto;
-      padding: 8px 0 2px; margin-top: 8px; border-top: 1px solid #e2e8f0;
-      scrollbar-width: none;
+    /* 新增頁底部：最近一筆快速確認卡 */
+    .recent-peek {
+      background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px;
+      padding: 11px 13px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
     }
-    .month-bar::-webkit-scrollbar { display: none; }
-    .m-chip {
+    .recent-peek-title { font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 2px; }
+    .recent-peek-main { font-size: 13px; color: #0f172a; font-weight: 800; }
+    .btn-go-list {
+      background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe;
+      padding: 7px 11px; font-size: 12px; border-radius: 8px; white-space: nowrap;
+    }
+
+    /* 查詢分頁：KPI 統計列 */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px;
+    }
+    .kpi-card {
+      background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 11px;
+      padding: 8px 6px; text-align: center; cursor: pointer;
+    }
+    .kpi-card.active { border-color: var(--blue); background: #eff6ff; }
+    .kpi-num { font-size: 18px; font-weight: 900; color: #0f172a; line-height: 1.1; }
+    .kpi-num.red { color: var(--red); }
+    .kpi-num.amber { color: var(--amber); }
+    .kpi-num.green { color: var(--green); }
+    .kpi-lbl { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 3px; }
+
+    /* 搜尋列 */
+    .search-wrap { position: relative; }
+    .search-wrap input { padding-right: 38px; }
+    .btn-clear-q {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 26px; height: 26px; border-radius: 50%; background: #e2e8f0; color: #475569;
+      font-size: 13px; display: none; align-items: center; justify-content: center; padding: 0;
+    }
+    .btn-clear-q.show { display: flex; }
+
+    /* 篩選與月份條 */
+    .chip-row {
+      display: flex; align-items: center; gap: 6px; overflow-x: auto;
+      padding: 8px 0 2px; scrollbar-width: none;
+    }
+    .chip-row::-webkit-scrollbar { display: none; }
+    .chip-row.bordered { margin-top: 6px; border-top: 1px solid #e2e8f0; }
+    .f-chip {
       flex: 0 0 auto; padding: 6px 10px; font-size: 12px; font-weight: 800;
       background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 99px;
     }
-    .m-chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .f-chip.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .f-chip.active-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .f-chip.active-red { background: var(--red); color: #fff; border-color: var(--red); }
 
-    .fold-tools {
-      display: flex; justify-content: space-between; align-items: center; gap: 8px;
-      margin-bottom: 8px; padding: 0 2px; font-size: 12px; color: #475569;
+    /* 展示工具列 */
+    .view-toolbar {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
+      margin-bottom: 10px; padding: 0 2px;
     }
-    .fold-btns { display: flex; gap: 6px; flex-shrink: 0; }
+    .view-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .view-right { display: flex; align-items: center; gap: 6px; }
+    .seg-mini {
+      display: inline-flex; background: #e2e8f0; padding: 3px; border-radius: 9px; gap: 2px;
+    }
+    .seg-mini button {
+      padding: 5px 10px; font-size: 12px; border-radius: 7px; background: transparent; color: #475569;
+    }
+    .seg-mini button.active { background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .btn-present {
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+      padding: 6px 10px; font-size: 12px; border-radius: 8px;
+    }
+    .btn-present.on {
+      background: #0f766e; color: #ffffff; border-color: #0f766e;
+    }
     .btn-fold-mini {
-      background: #e2e8f0; color: #1e293b; padding: 5px 9px; font-size: 12px; border-radius: 7px;
+      background: #e2e8f0; color: #1e293b; padding: 6px 9px; font-size: 12px; border-radius: 8px;
+    }
+    .btn-reset-filter {
+      background: #fee2e2; color: #b91c1c; padding: 5px 9px; font-size: 12px; border-radius: 8px;
+    }
+    .summary-line {
+      font-size: 12px; color: #475569; margin: 0 2px 8px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
     }
 
+    /* 月份與日期分組 */
     .month-section { margin-bottom: 12px; }
     .month-hdr {
       background: #0f172a; color: #fff; padding: 8px 12px; border-radius: 10px;
@@ -147,12 +235,13 @@
       background: var(--red); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 5px;
     }
 
+    /* 卡片模式 */
     .item {
       background: var(--card); border: 1.5px solid var(--border); border-radius: 12px;
       padding: 12px; margin-bottom: 8px;
     }
     .item.urgent { border-left: 6px solid var(--red); background: #fffafa; }
-    .item-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
     .badges { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
     .b { font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
     .b-nrs { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; font-family: monospace; font-size: 13px; }
@@ -166,9 +255,43 @@
 
     .item-main { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
     .item-sub { font-size: 13px; color: #475569; margin-bottom: 6px; }
-    .item-actions { display: flex; gap: 8px; margin-top: 8px; }
-    .btn-add-photo { width: 100%; background: #f1f5f9; color: #1e293b; border: 1.5px solid var(--border); padding: 10px; font-size: 13px; }
-    .btn-del { background: transparent; color: #94a3b8; font-size: 12px; padding: 4px 6px; }
+    .item-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 8px; }
+    .btn-add-photo { background: #f1f5f9; color: #1e293b; border: 1.5px solid var(--border); padding: 9px 10px; font-size: 13px; }
+    .btn-copy-rec { background: #eff6ff; color: var(--blue); border: 1.5px solid #bfdbfe; padding: 9px 12px; font-size: 13px; white-space: nowrap; }
+    .btn-del { background: transparent; color: #94a3b8; font-size: 12px; padding: 4px 6px; flex-shrink: 0; }
+
+    /* 條列展示模式 */
+    .compact-row {
+      background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 10px 11px; margin-bottom: 6px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      cursor: pointer;
+    }
+    .compact-row.urgent { border-left: 5px solid var(--red); background: #fffafa; }
+    .compact-left { min-width: 0; flex: 1; }
+    .compact-top { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 3px; }
+    .compact-part { font-size: 14px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .compact-meta { font-size: 11px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .compact-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .photo-cnt-pill {
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+      font-size: 11px; font-weight: 800; padding: 3px 7px; border-radius: 99px;
+    }
+
+    /* 展示模式（防誤刪、放大重點） */
+    body.present-mode .btn-del,
+    body.present-mode .btn-add-photo { display: none !important; }
+    body.present-mode .item-actions { grid-template-columns: 1fr; }
+    body.present-mode .item { padding: 15px; border-width: 2px; }
+    body.present-mode .item-main { font-size: 18px; }
+    body.present-mode .b-nrs,
+    body.present-mode .b-pass { font-size: 14px; padding: 4px 9px; }
+    body.present-mode .thumb,
+    body.present-mode .thumb img { width: 96px; height: 96px; }
+
+    mark.hl {
+      background: #fde047; color: #0f172a; padding: 0 2px; border-radius: 3px;
+    }
 
     .modal {
       display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.82);
@@ -184,8 +307,12 @@
       background: #0f172a; color: #fff; border-radius: 14px; padding: 12px;
       width: 100%; max-width: 96vw; text-align: center;
     }
+    .img-modal-top {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; font-size: 13px; color: #cbd5e1; font-weight: 700;
+    }
     .img-modal-box img {
-      display: block; margin: 0 auto; max-width: 100%; max-height: 74vh;
+      display: block; margin: 0 auto; max-width: 100%; max-height: 70vh;
       object-fit: contain; border-radius: 8px; background: #1e293b;
     }
     .img-fallback-msg {
@@ -203,6 +330,10 @@
     .btn-retry-img {
       background: #0f766e; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 13px;
     }
+    .btn-nav-img {
+      background: #475569; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    }
+    .btn-nav-img:disabled { opacity: 0.35; cursor: not-allowed; }
     .btn-close-img {
       background: #334155; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13px;
     }
@@ -223,91 +354,167 @@
   <button type="button" class="btn-cfg" id="btn-open-cfg">試算表設定</button>
 </div>
 
+<!-- 主分頁切換列 -->
+<div class="main-tabs">
+  <div class="main-tabs-inner">
+    <button type="button" class="main-tab active" data-main-tab="add">
+      <span>📝 新增紀錄</span>
+    </button>
+    <button type="button" class="main-tab" data-main-tab="list">
+      <span>🔍 查詢展示</span>
+      <span class="tab-badge" id="tab-total-badge">0</span>
+    </button>
+  </div>
+</div>
+
 <div class="wrap">
-  <div class="box">
-    <div class="sec-title">
-      <span>＋ 記一筆工件</span>
-      <label style="font-size:13px; color:var(--red); display:flex; align-items:center; gap:5px; cursor:pointer;">
-        <input type="checkbox" id="in-urgent" style="width:18px; height:18px;" /> 🚨 客戶急件
-      </label>
-    </div>
-
-    <div class="pills" id="cat-pills">
-      <button type="button" class="pill on-red" data-cat="SPECIAL">🔴 特殊</button>
-      <button type="button" class="pill" data-cat="RETURN">🟠 退貨</button>
-      <button type="button" class="pill" data-cat="NEW">🟢 新品</button>
-      <button type="button" class="pill" data-cat="GENERAL">🔵 一般</button>
-    </div>
-
-    <div class="row2">
-      <div class="field">
-        <span class="label">No. NRS（6碼單一）</span>
-        <input type="text" id="in-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
+  <!-- 分頁 1：新增紀錄 -->
+  <section id="panel-add" class="tab-panel active">
+    <div class="box">
+      <div class="sec-title">
+        <span>＋ 記一筆工件</span>
+        <label style="font-size:13px; color:var(--red); display:flex; align-items:center; gap:5px; cursor:pointer;">
+          <input type="checkbox" id="in-urgent" style="width:18px; height:18px; min-height:auto;" /> 🚨 客戶急件
+        </label>
       </div>
-      <div class="field">
-        <span class="label">放行單號（可多張逗號分隔）</span>
-        <input type="text" id="in-pass" placeholder="例：8354299, 8354300" />
+
+      <div class="pills" id="cat-pills">
+        <button type="button" class="pill on-red" data-cat="SPECIAL">🔴 特殊</button>
+        <button type="button" class="pill" data-cat="RETURN">🟠 退貨</button>
+        <button type="button" class="pill" data-cat="NEW">🟢 新品</button>
+        <button type="button" class="pill" data-cat="GENERAL">🔵 一般</button>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <span class="label">No. NRS（6碼單一）</span>
+          <input type="text" id="in-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
+        </div>
+        <div class="field">
+          <span class="label">放行單號（可多張逗號分隔）</span>
+          <input type="text" id="in-pass" placeholder="例：8354299, 8354300" />
+        </div>
+      </div>
+
+      <div id="in-ocr-hint" class="ocr-hint"></div>
+
+      <div class="row2">
+        <div class="field">
+          <span class="label">廠區 / 客戶</span>
+          <input type="text" id="in-plant" value="美光 F16" />
+        </div>
+        <div class="field">
+          <span class="label">工件名稱 / 料號 *</span>
+          <input type="text" id="in-part" placeholder="必填或拍單據" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <span class="label">補登 / 紀錄日期</span>
+          <input type="date" id="in-date" />
+        </div>
+        <div class="field">
+          <span class="label">備註</span>
+          <input type="text" id="in-note" placeholder="補充說明..." />
+        </div>
+      </div>
+
+      <div class="photo-bar">
+        <label class="btn-cam">
+          📷 直接拍照
+          <input type="file" id="in-cam-file" accept="image/*" capture="environment" multiple style="display:none;" />
+        </label>
+        <label class="btn-album">
+          🖼️ 從相簿選圖
+          <input type="file" id="in-album-file" accept="image/*" multiple style="display:none;" />
+        </label>
+        <button type="button" class="btn-ocr" id="btn-in-ocr">🔍 辨識單號</button>
+      </div>
+      <div id="in-thumbs" class="thumbs"></div>
+
+      <button type="button" class="btn-save" id="btn-save">💾 儲存這筆紀錄</button>
+    </div>
+
+    <!-- 最近一筆快速預覽 -->
+    <div id="recent-peek" class="recent-peek" style="display:none;">
+      <div style="min-width:0;">
+        <div class="recent-peek-title">📌 最近一筆已存紀錄</div>
+        <div class="recent-peek-main" id="recent-peek-text"></div>
+      </div>
+      <button type="button" class="btn-go-list" id="btn-go-list">去查詢頁 ➔</button>
+    </div>
+  </section>
+
+  <!-- 分頁 2：查詢與展示 -->
+  <section id="panel-list" class="tab-panel">
+    <!-- 統計儀表板（可點擊快速篩選） -->
+    <div class="kpi-grid">
+      <div class="kpi-card active" data-kpi="ALL">
+        <div class="kpi-num" id="kpi-all">0</div>
+        <div class="kpi-lbl">全部紀錄</div>
+      </div>
+      <div class="kpi-card" data-kpi="URGENT">
+        <div class="kpi-num red" id="kpi-urg">0</div>
+        <div class="kpi-lbl">🚨 急件</div>
+      </div>
+      <div class="kpi-card" data-kpi="MISSING">
+        <div class="kpi-num amber" id="kpi-miss">0</div>
+        <div class="kpi-lbl">⚠️ 待補單</div>
+      </div>
+      <div class="kpi-card" data-kpi="HAS_PHOTO">
+        <div class="kpi-num green" id="kpi-photo">0</div>
+        <div class="kpi-lbl">📷 有照片</div>
       </div>
     </div>
 
-    <div id="in-ocr-hint" class="ocr-hint"></div>
-
-    <div class="row2">
-      <div class="field">
-        <span class="label">廠區 / 客戶</span>
-        <input type="text" id="in-plant" value="美光 F16" />
+    <!-- 查詢與篩選區 -->
+    <div class="box" style="padding:12px;">
+      <div class="search-wrap">
+        <input type="text" id="q-text" placeholder="🔍 搜 NRS、放行單號、工件名稱、廠區或備註..." />
+        <button type="button" class="btn-clear-q" id="btn-clear-q" title="清除搜尋">✕</button>
       </div>
-      <div class="field">
-        <span class="label">工件名稱 / 料號 *</span>
-        <input type="text" id="in-part" placeholder="必填或拍單據" />
+
+      <!-- 類別快篩 -->
+      <div class="chip-row" id="cat-filter-bar">
+        <button type="button" class="f-chip active" data-cat-filter="ALL">全部類別</button>
+        <button type="button" class="f-chip" data-cat-filter="SPECIAL">🔴 特殊</button>
+        <button type="button" class="f-chip" data-cat-filter="RETURN">🟠 退貨</button>
+        <button type="button" class="f-chip" data-cat-filter="NEW">🟢 新品</button>
+        <button type="button" class="f-chip" data-cat-filter="GENERAL">🔵 一般</button>
+      </div>
+
+      <!-- 月份快篩 -->
+      <div id="month-bar" class="chip-row bordered"></div>
+    </div>
+
+    <!-- 展示模式與摺疊控制列 -->
+    <div class="view-toolbar">
+      <div class="view-left">
+        <div class="seg-mini">
+          <button type="button" class="active" data-view-mode="card">🃏 卡片</button>
+          <button type="button" data-view-mode="compact">📋 條列</button>
+        </div>
+        <button type="button" class="btn-present" id="btn-present-mode">👁️ 展示模式</button>
+      </div>
+      <div class="view-right">
+        <button type="button" class="btn-fold-mini" id="btn-expand-all">展開</button>
+        <button type="button" class="btn-fold-mini" id="btn-collapse-all">摺疊</button>
       </div>
     </div>
 
-    <div class="row2">
-      <div class="field">
-        <span class="label">補登 / 紀錄日期</span>
-        <input type="date" id="in-date" />
-      </div>
-      <div class="field">
-        <span class="label">備註</span>
-        <input type="text" id="in-note" placeholder="補充說明..." />
-      </div>
+    <div class="summary-line" id="summary-line" style="display:none;">
+      <span id="fold-summary"></span>
+      <button type="button" class="btn-reset-filter" id="btn-reset-filter" style="display:none;">清除篩選</button>
     </div>
 
-    <div class="photo-bar">
-      <label class="btn-cam">
-        📷 直接拍照
-        <input type="file" id="in-cam-file" accept="image/*" capture="environment" multiple style="display:none;" />
-      </label>
-      <label class="btn-album">
-        🖼️ 從相簿選圖
-        <input type="file" id="in-album-file" accept="image/*" multiple style="display:none;" />
-      </label>
-      <button type="button" class="btn-ocr" id="btn-in-ocr">🔍 辨識單號</button>
-    </div>
-    <div id="in-thumbs" class="thumbs"></div>
+    <div id="list-area"></div>
+  </section>
+</div>
 
-    <button type="button" class="btn-save" id="btn-save">💾 儲存這筆紀錄</button>
-  </div>
-
-  <div class="box" style="padding:12px;">
-    <input type="text" id="q-text" placeholder="🔍 搜尋 NRS、放行單號、工件名稱或備註..." />
-    <div class="filter-row">
-      <button type="button" class="f-tab active" data-filter="ALL">全部 (<span id="cnt-all">0</span>)</button>
-      <button type="button" class="f-tab" data-filter="URGENT">🚨 急件 (<span id="cnt-urg">0</span>)</button>
-    </div>
-    <div id="month-bar" class="month-bar"></div>
-  </div>
-
-  <div id="fold-tools" class="fold-tools" style="display:none;">
-    <span id="fold-summary">按月份與日期分組</span>
-    <div class="fold-btns">
-      <button type="button" class="btn-fold-mini" id="btn-expand-all">全部展開</button>
-      <button type="button" class="btn-fold-mini" id="btn-collapse-all">全部摺疊</button>
-    </div>
-  </div>
-
-  <div id="list-area"></div>
+<!-- 條列模式點擊後的「展示詳情卡」 -->
+<div id="modal-detail" class="modal">
+  <div class="modal-box" id="detail-box"></div>
 </div>
 
 <!-- 修改紀錄 / 補單號 / 補拍照片視窗 -->
@@ -319,9 +526,9 @@
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <span class="label" style="margin-bottom:0;">工件類別</span>
+      <span class="label" style="margin-bottom:0; min-height:auto;">工件類別</span>
       <label style="font-size:13px; color:var(--red); font-weight:700; display:flex; align-items:center; gap:5px; cursor:pointer;">
-        <input type="checkbox" id="edit-urgent" style="width:18px; height:18px;" /> 🚨 客戶急件
+        <input type="checkbox" id="edit-urgent" style="width:18px; height:18px; min-height:auto;" /> 🚨 客戶急件
       </label>
     </div>
     <div class="pills" id="edit-cat-pills">
@@ -401,15 +608,21 @@
   </div>
 </div>
 
-<!-- 大圖預覽 -->
+<!-- 大圖預覽（支援多張照片左右切換） -->
 <div id="modal-img" class="modal">
   <div class="img-modal-box" id="img-modal-card">
+    <div class="img-modal-top">
+      <span id="img-modal-title">單據照片預覽</span>
+      <span id="img-modal-counter">1 / 1</span>
+    </div>
     <img id="big-img" src="" alt="放大照片" />
     <div id="img-fallback-msg" class="img-fallback-msg">
       預覽圖目前無法直接顯示（可能仍在產生縮圖或受到瀏覽器限制），請點下方「開 Drive 原圖」檢視。
     </div>
     <div class="img-modal-actions">
-      <button type="button" class="btn-retry-img" id="btn-retry-img">重新載入</button>
+      <button type="button" class="btn-nav-img" id="btn-prev-img">◀ 上一張</button>
+      <button type="button" class="btn-nav-img" id="btn-next-img">下一張 ▶</button>
+      <button type="button" class="btn-retry-img" id="btn-retry-img">重載</button>
       <a id="btn-open-orig" class="btn-open-orig" href="#" target="_blank" rel="noopener noreferrer">開 Drive 原圖</a>
       <button type="button" class="btn-close-img" id="btn-close-img">關閉</button>
     </div>
@@ -427,15 +640,40 @@
   const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbx4qJQwzNN7P8ILy502bZEcgkwumNBN7SJGjFjb-MmCbZpZ2Te4pMjhO4-MlRxcYRr4/exec";
 
   let records = [];
+  let activeMainTab = "add";
   let selectedCat = "SPECIAL";
   let draftPhotos = [];
-  let currentFilter = "ALL";
+
+  // 查詢與展示狀態
+  let kpiFilter = "ALL";       // ALL | URGENT | MISSING | HAS_PHOTO
+  let catFilter = "ALL";       // ALL | SPECIAL | RETURN | NEW | GENERAL
   let selectedMonth = "ALL";
+  let viewMode = "card";       // card | compact
+  let presentMode = false;
   let collapsedDays = {};
   let hasInitializedCollapse = false;
+
+  // 編輯狀態
   let editingId = null;
   let editSelectedCat = "SPECIAL";
   let editPhotos = [];
+
+  const CAT_TEXT = {
+    SPECIAL: "🔴 特殊",
+    RETURN: "🟠 退貨",
+    NEW: "🟢 新品",
+    GENERAL: "🔵 一般"
+  };
+
+  function switchMainTab(tabName) {
+    activeMainTab = tabName === "list" ? "list" : "add";
+    document.querySelectorAll("[data-main-tab]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.mainTab === activeMainTab);
+    });
+    document.getElementById("panel-add").classList.toggle("active", activeMainTab === "add");
+    document.getElementById("panel-list").classList.toggle("active", activeMainTab === "list");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
 
   function normalizeSingleNrs(raw) {
     if (Array.isArray(raw)) {
@@ -562,8 +800,8 @@
     };
   }
 
-  function getTodayDayKey() {
-    return getTodayDateInputStr();
+  function isMissingNumber(r) {
+    return !normalizeSingleNrs(r.nrs) || parsePassTokens(r.passNo).length === 0;
   }
 
   function extractDriveId(url) {
@@ -697,6 +935,17 @@
     return String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   }
 
+  function highlightText(raw, query) {
+    const safe = esc(raw);
+    if (!query) return safe;
+    const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    try {
+      return safe.replace(new RegExp(`(${escapedQ})`, "gi"), '<mark class="hl">$1</mark>');
+    } catch (_) {
+      return safe;
+    }
+  }
+
   function applyCatPillsUI(containerSelector, catVal) {
     const cls = { SPECIAL: "on-red", RETURN: "on-amber", NEW: "on-green", GENERAL: "on-blue" };
     document.querySelectorAll(`${containerSelector} .pill`).forEach(p => {
@@ -827,75 +1076,75 @@
     }
   }
 
-  document.addEventListener("click", (e) => {
-    const nrsBtn = e.target.closest("[data-set-nrs]");
-    if (nrsBtn) {
-      const el = document.getElementById(nrsBtn.dataset.setNrs);
-      if (el) {
-        el.value = nrsBtn.dataset.nrsVal;
-        toast(`✅ 已套用單一 NRS：${nrsBtn.dataset.nrsVal}`);
-      }
-      return;
-    }
+  function buildShareText(r) {
+    const tags = [];
+    if (r.urgent) tags.push("急件");
+    const catClean = (CAT_TEXT[r.cat] || "特殊").replace(/^[^\u4e00-\u9fa5]+/, "");
+    tags.push(catClean);
+    const nrs = normalizeSingleNrs(r.nrs) || "待補";
+    const passes = parsePassTokens(r.passNo);
+    const passStr = passes.length ? passes.join(", ") : "無";
+    const lines = [
+      `【${tags.join("｜")}】${r.plant || "美光 F16"} - ${r.part || "未填工件"}`,
+      `NRS：${nrs}`,
+      `放行單：${passStr}`,
+      `日期：${r.createdAt || ""}`
+    ];
+    if (r.note) lines.push(`備註：${r.note}`);
+    return lines.join("\n");
+  }
 
-    const passChip = e.target.closest("[data-fill-pass]");
-    if (passChip) {
-      const el = document.getElementById(passChip.dataset.fillPass);
-      if (!el) return;
-      if (passChip.dataset.fillAll) {
-        const vals = parsePassTokens(passChip.dataset.fillAll);
-        const added = appendManyUniquePassNumbers(el, vals);
-        toast(added > 0 ? `✅ 已追加 ${added} 張放行單` : "這些放行單號都已在欄位中");
-      } else if (passChip.dataset.fillVal) {
-        const ok = appendUniquePassNumber(el, passChip.dataset.fillVal);
-        toast(ok ? `✅ 已追加放行單 ${passChip.dataset.fillVal}` : `${passChip.dataset.fillVal} 已在欄位中`);
-      }
+  async function copyRecordText(recId) {
+    const r = records.find(x => x.id === recId);
+    if (!r) return;
+    const text = buildShareText(r);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("📋 已複製紀錄文字（可直接貼到 LINE）");
+    } catch (_) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast("📋 已複製紀錄文字");
     }
-  });
+  }
 
-  function renderThumbHtml(rawUrl) {
+  function renderThumbHtml(rawUrl, groupId, idx) {
     const thumbSrc = esc(toThumbSrc(rawUrl));
     const origHref = esc(toDriveViewUrl(rawUrl));
     const rawEnc = esc(rawUrl);
-    return `<div class="thumb"><img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" /></div>`;
+    return `<div class="thumb"><img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" data-gallery="${esc(groupId)}" data-gidx="${idx}" /></div>`;
   }
 
   function renderDraftThumbs() {
-    document.getElementById("in-thumbs").innerHTML = draftPhotos.map((src, i) => {
-      const thumbSrc = esc(toThumbSrc(src));
-      const origHref = esc(toDriveViewUrl(src));
-      const rawEnc = esc(src);
-      return `
-        <div class="thumb">
-          <img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" />
-          <button type="button" class="thumb-del" data-del-draft="${i}">×</button>
-        </div>
-      `;
-    }).join("");
+    document.getElementById("in-thumbs").innerHTML = draftPhotos.map((src, i) => `
+      <div class="thumb">
+        <img src="${esc(toThumbSrc(src))}" data-raw="${esc(src)}" data-orig="${esc(toDriveViewUrl(src))}" data-gallery="__draft__" data-gidx="${i}" />
+        <button type="button" class="thumb-del" data-del-draft="${i}">×</button>
+      </div>
+    `).join("");
   }
 
   function renderEditThumbs() {
-    document.getElementById("edit-thumbs").innerHTML = editPhotos.map((src, i) => {
-      const thumbSrc = esc(toThumbSrc(src));
-      const origHref = esc(toDriveViewUrl(src));
-      const rawEnc = esc(src);
-      return `
-        <div class="thumb">
-          <img src="${thumbSrc}" data-raw="${rawEnc}" data-orig="${origHref}" />
-          <button type="button" class="thumb-del" data-del-edit-photo="${i}">×</button>
-        </div>
-      `;
-    }).join("");
+    document.getElementById("edit-thumbs").innerHTML = editPhotos.map((src, i) => `
+      <div class="thumb">
+        <img src="${esc(toThumbSrc(src))}" data-raw="${esc(src)}" data-orig="${esc(toDriveViewUrl(src))}" data-gallery="__edit__" data-gidx="${i}" />
+        <button type="button" class="thumb-del" data-del-edit-photo="${i}">×</button>
+      </div>
+    `).join("");
   }
 
-  function renderRecordCard(r, catText) {
+  function renderRecordCard(r, q) {
     const singleNrs = normalizeSingleNrs(r.nrs);
     const passTokens = parsePassTokens(r.passNo);
     const nrsBadge = singleNrs
-      ? `<span class="b b-nrs">NRS ${esc(singleNrs)}</span>`
-      : `<span class="b b-nonrs">待補單號</span>`;
+      ? `<span class="b b-nrs">NRS ${highlightText(singleNrs, q)}</span>`
+      : `<span class="b b-nonrs">待補 NRS</span>`;
     const passBadges = passTokens
-      .map(p => `<span class="b b-pass">放行 ${esc(p)}</span>`)
+      .map(p => `<span class="b b-pass">放行 ${highlightText(p, q)}</span>`)
       .join("");
 
     return `
@@ -905,37 +1154,134 @@
             ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
             ${nrsBadge}
             ${passBadges}
-            <span class="b b-cat-${r.cat}">${catText[r.cat] || "特殊"}</span>
+            <span class="b b-cat-${r.cat}">${CAT_TEXT[r.cat] || "特殊"}</span>
           </div>
           <button type="button" class="btn-del" data-del-id="${r.id}">刪除</button>
         </div>
 
-        <div class="item-main">${esc(r.plant)} ｜ ${esc(r.part)}</div>
+        <div class="item-main">${highlightText(r.plant, q)} ｜ ${highlightText(r.part, q)}</div>
         <div class="item-sub">
           建檔：${esc(r.createdAt)}
-          ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${esc(r.note)}</div>` : ""}
+          ${r.note ? `<div style="color:#0f172a;margin-top:3px;">備註：${highlightText(r.note, q)}</div>` : ""}
         </div>
 
         ${r.photos && r.photos.length ? `
           <div class="thumbs" style="margin-bottom:4px;">
-            ${r.photos.map(p => renderThumbHtml(p)).join("")}
+            ${r.photos.map((p, idx) => renderThumbHtml(p, r.id, idx)).join("")}
           </div>
         ` : ""}
 
         <div class="item-actions">
-          <button type="button" class="btn-add-photo" data-edit-id="${r.id}">✏️ 修改紀錄 / 補單號・照片</button>
+          <button type="button" class="btn-add-photo" data-edit-id="${r.id}">✏️ 修改 / 補單・照片</button>
+          <button type="button" class="btn-copy-rec" data-copy-id="${r.id}">📋 複製</button>
         </div>
       </div>
     `;
   }
 
+  function renderCompactRow(r, q) {
+    const singleNrs = normalizeSingleNrs(r.nrs);
+    const passTokens = parsePassTokens(r.passNo);
+    const photoCnt = Array.isArray(r.photos) ? r.photos.length : 0;
+    const passSummary = passTokens.length
+      ? `放行：${passTokens.slice(0, 2).join(", ")}${passTokens.length > 2 ? ` (+${passTokens.length - 2})` : ""}`
+      : "無放行單";
+
+    return `
+      <div class="compact-row ${r.urgent ? "urgent" : ""}" data-open-detail="${r.id}">
+        <div class="compact-left">
+          <div class="compact-top">
+            ${r.urgent ? `<span class="b b-urg" style="padding:2px 6px;font-size:11px;">急</span>` : ""}
+            <span class="b b-cat-${r.cat}" style="padding:2px 6px;font-size:11px;">${CAT_TEXT[r.cat] || "特殊"}</span>
+            ${singleNrs
+              ? `<span class="b b-nrs" style="padding:2px 6px;font-size:12px;">NRS ${highlightText(singleNrs, q)}</span>`
+              : `<span class="b b-nonrs" style="padding:2px 6px;font-size:11px;">待補 NRS</span>`
+            }
+          </div>
+          <div class="compact-part">${highlightText(r.plant, q)} ｜ ${highlightText(r.part, q)}</div>
+          <div class="compact-meta">${highlightText(passSummary, q)}${r.note ? ` ・ ${highlightText(r.note, q)}` : ""}</div>
+        </div>
+        <div class="compact-right">
+          ${photoCnt > 0 ? `<span class="photo-cnt-pill">📷 ${photoCnt}</span>` : ""}
+          <span style="color:#94a3b8;font-size:14px;">›</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function openDetailModal(recId) {
+    const r = records.find(x => x.id === recId);
+    if (!r) return;
+    const box = document.getElementById("detail-box");
+    const singleNrs = normalizeSingleNrs(r.nrs);
+    const passTokens = parsePassTokens(r.passNo);
+
+    box.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong style="font-size:16px;">📄 工件紀錄詳情</strong>
+        <button type="button" id="btn-close-detail" style="background:#e2e8f0; padding:5px 10px;">✕</button>
+      </div>
+      <div class="badges" style="margin-bottom:8px;">
+        ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
+        <span class="b b-cat-${r.cat}">${CAT_TEXT[r.cat] || "特殊"}</span>
+        ${singleNrs ? `<span class="b b-nrs">NRS ${esc(singleNrs)}</span>` : `<span class="b b-nonrs">待補 NRS</span>`}
+        ${passTokens.map(p => `<span class="b b-pass">放行 ${esc(p)}</span>`).join("")}
+      </div>
+      <div style="font-size:17px; font-weight:900; margin-bottom:6px;">${esc(r.plant)} ｜ ${esc(r.part)}</div>
+      <div style="font-size:13px; color:#475569; margin-bottom:10px; line-height:1.5;">
+        <div>建檔時間：${esc(r.createdAt)}</div>
+        ${r.note ? `<div style="color:#0f172a; margin-top:4px;">備註：${esc(r.note)}</div>` : ""}
+      </div>
+      ${r.photos && r.photos.length ? `
+        <div class="thumbs" style="margin-bottom:12px;">
+          ${r.photos.map((p, idx) => renderThumbHtml(p, r.id, idx)).join("")}
+        </div>
+      ` : `<div style="font-size:12px; color:#94a3b8; margin-bottom:12px;">尚無附圖</div>`}
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+        <button type="button" class="btn-copy-rec" data-copy-id="${r.id}">📋 複製文字</button>
+        ${presentMode ? `<button type="button" id="btn-close-detail-2" style="background:#334155;color:#fff;padding:9px;font-size:13px;">關閉</button>`
+          : `<button type="button" class="btn-add-photo" data-edit-from-detail="${r.id}">✏️ 修改紀錄</button>`}
+      </div>
+    `;
+    document.getElementById("modal-detail").classList.add("open");
+  }
+
   function render() {
-    const q = document.getElementById("q-text").value.trim().toLowerCase();
+    const qRaw = document.getElementById("q-text").value.trim();
+    const q = qRaw.toLowerCase();
+    document.getElementById("btn-clear-q").classList.toggle("show", qRaw.length > 0);
 
+    // 更新分頁徽章與最近一筆預覽
+    document.getElementById("tab-total-badge").textContent = records.length;
+    const recentPeek = document.getElementById("recent-peek");
+    if (records.length > 0) {
+      const latest = [...records].sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0))[0];
+      const latestNrs = normalizeSingleNrs(latest.nrs);
+      recentPeek.style.display = "flex";
+      document.getElementById("recent-peek-text").textContent =
+        `${latestNrs ? `NRS ${latestNrs}｜` : ""}${latest.part || "未填工件"} (${latest.createdAt || ""})`;
+    } else {
+      recentPeek.style.display = "none";
+    }
+
+    // KPI 數字
     const urgCnt = records.filter(r => r.urgent).length;
-    document.getElementById("cnt-all").textContent = records.length;
-    document.getElementById("cnt-urg").textContent = urgCnt;
+    const missCnt = records.filter(r => isMissingNumber(r)).length;
+    const photoCnt = records.filter(r => Array.isArray(r.photos) && r.photos.length > 0).length;
+    document.getElementById("kpi-all").textContent = records.length;
+    document.getElementById("kpi-urg").textContent = urgCnt;
+    document.getElementById("kpi-miss").textContent = missCnt;
+    document.getElementById("kpi-photo").textContent = photoCnt;
 
+    document.querySelectorAll("[data-kpi]").forEach(el => {
+      el.classList.toggle("active", el.dataset.kpi === kpiFilter);
+    });
+
+    document.querySelectorAll("[data-cat-filter]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.catFilter === catFilter);
+    });
+
+    // 月份清單
     const monthCountMap = new Map();
     records.forEach(r => {
       const info = getRecordDateInfo(r);
@@ -952,42 +1298,48 @@
     const monthBar = document.getElementById("month-bar");
     if (monthList.length > 0) {
       monthBar.style.display = "flex";
-      const chipsHtml = [
-        `<button type="button" class="m-chip ${selectedMonth === "ALL" ? "active" : ""}" data-month="ALL">全部月份 (${records.length})</button>`,
+      monthBar.innerHTML = [
+        `<button type="button" class="f-chip ${selectedMonth === "ALL" ? "active-blue" : ""}" data-month="ALL">全部月份 (${records.length})</button>`,
         ...monthList.map(m =>
-          `<button type="button" class="m-chip ${selectedMonth === m.key ? "active" : ""}" data-month="${esc(m.key)}">${esc(m.label)} (${m.count})</button>`
+          `<button type="button" class="f-chip ${selectedMonth === m.key ? "active-blue" : ""}" data-month="${esc(m.key)}">${esc(m.label)} (${m.count})</button>`
         )
-      ];
-      monthBar.innerHTML = chipsHtml.join("");
+      ].join("");
     } else {
       monthBar.style.display = "none";
       monthBar.innerHTML = "";
     }
 
-    const catText = { SPECIAL: "🔴 特殊", RETURN: "🟠 退貨", NEW: "🟢 新品", GENERAL: "🔵 一般" };
-
+    // 執行多條件篩選
     const filtered = records
       .filter(r => {
-        if (currentFilter === "URGENT" && !r.urgent) return false;
+        if (kpiFilter === "URGENT" && !r.urgent) return false;
+        if (kpiFilter === "MISSING" && !isMissingNumber(r)) return false;
+        if (kpiFilter === "HAS_PHOTO" && !(Array.isArray(r.photos) && r.photos.length > 0)) return false;
+        if (catFilter !== "ALL" && r.cat !== catFilter) return false;
         const info = getRecordDateInfo(r);
         if (selectedMonth !== "ALL" && info.monthKey !== selectedMonth) return false;
         if (q) {
-          const text = `${r.nrs} ${r.passNo || ""} ${r.plant} ${r.part} ${r.note} ${r.createdAt}`.toLowerCase();
+          const text = `${r.nrs || ""} ${r.passNo || ""} ${r.plant || ""} ${r.part || ""} ${r.note || ""} ${r.createdAt || ""}`.toLowerCase();
           if (!text.includes(q)) return false;
         }
         return true;
       })
       .sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0));
 
-    const foldTools = document.getElementById("fold-tools");
+    const hasActiveFilter = kpiFilter !== "ALL" || catFilter !== "ALL" || selectedMonth !== "ALL" || qRaw.length > 0;
+    const summaryLine = document.getElementById("summary-line");
+    const resetBtn = document.getElementById("btn-reset-filter");
     const area = document.getElementById("list-area");
 
     if (!filtered.length) {
-      foldTools.style.display = "none";
-      area.innerHTML = `<div style="text-align:center;color:#64748b;padding:28px;font-size:14px;">目前沒有符合的紀錄</div>`;
+      summaryLine.style.display = hasActiveFilter ? "flex" : "none";
+      document.getElementById("fold-summary").textContent = "查無符合條件的紀錄";
+      resetBtn.style.display = hasActiveFilter ? "inline-block" : "none";
+      area.innerHTML = `<div style="text-align:center;color:#64748b;padding:32px 16px;font-size:14px;">目前沒有符合的紀錄</div>`;
       return;
     }
 
+    // 月份 -> 日期分組
     const monthGroupsMap = new Map();
     const allDayKeys = [];
     filtered.forEach(r => {
@@ -1015,7 +1367,7 @@
 
     if (!hasInitializedCollapse && allDayKeys.length > 0) {
       const sortedAllDays = [...allDayKeys].sort((a, b) => b.localeCompare(a));
-      const todayKey = getTodayDayKey();
+      const todayKey = getTodayDateInputStr();
       const defaultOpenDay = sortedAllDays.includes(todayKey) ? todayKey : sortedAllDays[0];
       sortedAllDays.forEach(dk => {
         if (dk !== defaultOpenDay) collapsedDays[dk] = true;
@@ -1023,8 +1375,10 @@
       hasInitializedCollapse = true;
     }
 
-    foldTools.style.display = "flex";
-    document.getElementById("fold-summary").textContent = `共 ${monthGroupsMap.size} 個月・${allDayKeys.length} 天`;
+    summaryLine.style.display = "flex";
+    document.getElementById("fold-summary").textContent =
+      `顯示 ${filtered.length} 筆（${monthGroupsMap.size} 個月・${allDayKeys.length} 天）`;
+    resetBtn.style.display = hasActiveFilter ? "inline-block" : "none";
 
     const sortedMonths = Array.from(monthGroupsMap.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
 
@@ -1036,7 +1390,12 @@
           return (Number(b.ts) || 0) - (Number(a.ts) || 0);
         });
         const urgInDay = dayItems.filter(x => x.urgent).length;
-        const isCollapsed = !q && Boolean(collapsedDays[dGrp.dayKey]);
+        // 搜尋或篩選時自動展開，方便直接瀏覽結果
+        const isCollapsed = !hasActiveFilter && Boolean(collapsedDays[dGrp.dayKey]);
+
+        const bodyHtml = viewMode === "compact"
+          ? dayItems.map(item => renderCompactRow(item, qRaw)).join("")
+          : dayItems.map(item => renderRecordCard(item, qRaw)).join("");
 
         return `
           <div class="day-group ${isCollapsed ? "collapsed" : ""}" data-day-wrap="${esc(dGrp.dayKey)}">
@@ -1048,9 +1407,7 @@
               </span>
               <span>${dayItems.length} 筆</span>
             </button>
-            <div class="day-body">
-              ${dayItems.map(item => renderRecordCard(item, catText)).join("")}
-            </div>
+            <div class="day-body">${bodyHtml}</div>
           </div>
         `;
       }).join("");
@@ -1067,10 +1424,67 @@
     }).join("");
   }
 
+  // 主分頁切換事件
+  document.querySelectorAll("[data-main-tab]").forEach(btn => {
+    btn.addEventListener("click", () => switchMainTab(btn.dataset.mainTab));
+  });
+
+  document.getElementById("btn-go-list").addEventListener("click", () => switchMainTab("list"));
+
+  // KPI 卡片篩選
+  document.querySelectorAll("[data-kpi]").forEach(card => {
+    card.addEventListener("click", () => {
+      const target = card.dataset.kpi;
+      kpiFilter = (kpiFilter === target && target !== "ALL") ? "ALL" : target;
+      render();
+    });
+  });
+
+  // 類別快篩
+  document.getElementById("cat-filter-bar").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-cat-filter]");
+    if (!btn) return;
+    catFilter = btn.dataset.catFilter;
+    render();
+  });
+
+  // 月份快篩
   document.getElementById("month-bar").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-month]");
     if (!btn) return;
     selectedMonth = btn.dataset.month;
+    render();
+  });
+
+  // 檢視模式（卡片 / 條列）
+  document.querySelectorAll("[data-view-mode]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      viewMode = btn.dataset.viewMode;
+      document.querySelectorAll("[data-view-mode]").forEach(b => b.classList.toggle("active", b.dataset.viewMode === viewMode));
+      render();
+    });
+  });
+
+  // 展示模式切換（防誤刪、放大重點）
+  document.getElementById("btn-present-mode").addEventListener("click", (e) => {
+    presentMode = !presentMode;
+    document.body.classList.toggle("present-mode", presentMode);
+    e.currentTarget.classList.toggle("on", presentMode);
+    e.currentTarget.textContent = presentMode ? "👁️ 展示中" : "👁️ 展示模式";
+    toast(presentMode ? "👁️ 已開啟展示模式（隱藏刪除與編輯鈕）" : "已切回一般管理模式");
+  });
+
+  // 清除搜尋與重設所有篩選
+  document.getElementById("btn-clear-q").addEventListener("click", () => {
+    document.getElementById("q-text").value = "";
+    render();
+  });
+
+  document.getElementById("btn-reset-filter").addEventListener("click", () => {
+    kpiFilter = "ALL";
+    catFilter = "ALL";
+    selectedMonth = "ALL";
+    document.getElementById("q-text").value = "";
     render();
   });
 
@@ -1087,6 +1501,9 @@
     render();
   });
 
+  document.getElementById("q-text").addEventListener("input", render);
+
+  // 新增區事件
   document.getElementById("cat-pills").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-cat]");
     if (!btn) return;
@@ -1144,8 +1561,7 @@
     }
   });
 
-  const inDateEl = document.getElementById("in-date");
-  inDateEl.value = getTodayDateInputStr();
+  document.getElementById("in-date").value = getTodayDateInputStr();
 
   document.getElementById("btn-save").addEventListener("click", async () => {
     const nrs = normalizeSingleNrs(document.getElementById("in-nrs").value);
@@ -1204,16 +1620,29 @@
     toast(isBackfill ? `✅ 已補登 ${dateVal.slice(5).replace("-", "/")} 紀錄` : "✅ 已儲存紀錄");
   });
 
-  document.querySelector(".filter-row").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-filter]");
-    if (!btn) return;
-    currentFilter = btn.dataset.filter;
-    document.querySelectorAll(".f-tab").forEach(t => t.classList.toggle("active", t.dataset.filter === currentFilter));
-    render();
-  });
+  function openEditModal(recId) {
+    const r = records.find(x => x.id === recId);
+    if (!r) return;
+    editingId = r.id;
+    editSelectedCat = r.cat || "SPECIAL";
+    applyCatPillsUI("#edit-cat-pills", editSelectedCat);
+    document.getElementById("edit-urgent").checked = Boolean(r.urgent);
+    document.getElementById("edit-nrs").value = normalizeSingleNrs(r.nrs || "");
+    document.getElementById("edit-pass").value = normalizePassListStr(r.passNo || "");
+    const info = getRecordDateInfo(r);
+    document.getElementById("edit-date").value = info.dayKey !== "0000-00-00" ? info.dayKey : getTodayDateInputStr();
+    document.getElementById("edit-plant").value = r.plant || "美光 F16";
+    document.getElementById("edit-part").value = r.part || "";
+    document.getElementById("edit-note").value = r.note || "";
+    editPhotos = [...(r.photos || [])];
+    const editHint = document.getElementById("edit-ocr-hint");
+    editHint.classList.remove("show");
+    editHint.innerHTML = "";
+    renderEditThumbs();
+    document.getElementById("modal-edit").classList.add("open");
+  }
 
-  document.getElementById("q-text").addEventListener("input", render);
-
+  // 列表區委派事件
   document.getElementById("list-area").addEventListener("click", async (e) => {
     const dayBtn = e.target.closest("[data-toggle-day]");
     if (dayBtn) {
@@ -1228,6 +1657,12 @@
       return;
     }
 
+    const copyBtn = e.target.closest("[data-copy-id]");
+    if (copyBtn) {
+      await copyRecordText(copyBtn.dataset.copyId);
+      return;
+    }
+
     const delBtn = e.target.closest("[data-del-id]");
     if (delBtn) {
       if (!confirm("確定刪除這筆紀錄？")) return;
@@ -1239,28 +1674,62 @@
 
     const editBtn = e.target.closest("[data-edit-id]");
     if (editBtn) {
-      const r = records.find(x => x.id === editBtn.dataset.editId);
-      if (!r) return;
-      editingId = r.id;
-      editSelectedCat = r.cat || "SPECIAL";
-      applyCatPillsUI("#edit-cat-pills", editSelectedCat);
-      document.getElementById("edit-urgent").checked = Boolean(r.urgent);
-      document.getElementById("edit-nrs").value = normalizeSingleNrs(r.nrs || "");
-      document.getElementById("edit-pass").value = normalizePassListStr(r.passNo || "");
-      const info = getRecordDateInfo(r);
-      document.getElementById("edit-date").value = info.dayKey !== "0000-00-00" ? info.dayKey : getTodayDateInputStr();
-      document.getElementById("edit-plant").value = r.plant || "美光 F16";
-      document.getElementById("edit-part").value = r.part || "";
-      document.getElementById("edit-note").value = r.note || "";
-      editPhotos = [...(r.photos || [])];
-      const editHint = document.getElementById("edit-ocr-hint");
-      editHint.classList.remove("show");
-      editHint.innerHTML = "";
-      renderEditThumbs();
-      document.getElementById("modal-edit").classList.add("open");
+      openEditModal(editBtn.dataset.editId);
+      return;
+    }
+
+    const detailRow = e.target.closest("[data-open-detail]");
+    if (detailRow) {
+      openDetailModal(detailRow.dataset.openDetail);
     }
   });
 
+  // 詳情視窗事件
+  document.getElementById("modal-detail").addEventListener("click", async (e) => {
+    if (e.target.id === "modal-detail" || e.target.id === "btn-close-detail" || e.target.id === "btn-close-detail-2") {
+      document.getElementById("modal-detail").classList.remove("open");
+      return;
+    }
+    const copyBtn = e.target.closest("[data-copy-id]");
+    if (copyBtn) {
+      await copyRecordText(copyBtn.dataset.copyId);
+      return;
+    }
+    const editBtn = e.target.closest("[data-edit-from-detail]");
+    if (editBtn) {
+      document.getElementById("modal-detail").classList.remove("open");
+      openEditModal(editBtn.dataset.editFromDetail);
+    }
+  });
+
+  // 全域 OCR 填入按鈕事件
+  document.addEventListener("click", (e) => {
+    const nrsBtn = e.target.closest("[data-set-nrs]");
+    if (nrsBtn) {
+      const el = document.getElementById(nrsBtn.dataset.setNrs);
+      if (el) {
+        el.value = nrsBtn.dataset.nrsVal;
+        toast(`✅ 已套用單一 NRS：${nrsBtn.dataset.nrsVal}`);
+      }
+      return;
+    }
+
+    const passChip = e.target.closest("[data-fill-pass]");
+    if (passChip) {
+      const el = document.getElementById(passChip.dataset.fillPass);
+      if (!el) return;
+      if (passChip.dataset.fillAll) {
+        const vals = parsePassTokens(passChip.dataset.fillAll);
+        const added = appendManyUniquePassNumbers(el, vals);
+        toast(added > 0 ? `✅ 已追加 ${added} 張放行單` : "這些放行單號都已在欄位中");
+      } else if (passChip.dataset.fillVal) {
+        const ok = appendUniquePassNumber(el, passChip.dataset.fillVal);
+        toast(ok ? `✅ 已追加放行單 ${passChip.dataset.fillVal}` : `${passChip.dataset.fillVal} 已在欄位中`);
+      }
+    }
+  });
+
+  // 編輯視窗檔案與存檔
   document.getElementById("edit-cam-file").addEventListener("change", async (e) => {
     await handleNewFiles(e.target.files, editPhotos, renderEditThumbs, "edit");
     e.target.value = "";
@@ -1334,14 +1803,42 @@
     toast("已儲存試算表設定");
   });
 
+  // 大圖預覽（支援多圖切換）
   const modalImg = document.getElementById("modal-img");
   const bigImg = document.getElementById("big-img");
   const btnOpenOrig = document.getElementById("btn-open-orig");
   const fallbackMsg = document.getElementById("img-fallback-msg");
+  const imgCounter = document.getElementById("img-modal-counter");
+  const btnPrevImg = document.getElementById("btn-prev-img");
+  const btnNextImg = document.getElementById("btn-next-img");
 
+  let galleryList = [];
+  let galleryIdx = 0;
   let activeCandidates = [];
   let candidateIdx = 0;
-  let activeRawUrl = "";
+
+  function loadGalleryPhoto(idx) {
+    if (!galleryList.length) return;
+    galleryIdx = Math.max(0, Math.min(idx, galleryList.length - 1));
+    const rawUrl = galleryList[galleryIdx];
+    activeCandidates = buildPhotoCandidates(rawUrl);
+    candidateIdx = 0;
+
+    imgCounter.textContent = `${galleryIdx + 1} / ${galleryList.length}`;
+    btnPrevImg.disabled = galleryIdx <= 0;
+    btnNextImg.disabled = galleryIdx >= galleryList.length - 1;
+    btnPrevImg.style.display = galleryList.length > 1 ? "inline-block" : "none";
+    btnNextImg.style.display = galleryList.length > 1 ? "inline-block" : "none";
+
+    const orig = toDriveViewUrl(rawUrl);
+    if (orig && orig !== "#") {
+      btnOpenOrig.href = orig;
+      btnOpenOrig.style.display = "inline-block";
+    } else {
+      btnOpenOrig.style.display = "none";
+    }
+    tryLoadCandidate();
+  }
 
   function tryLoadCandidate() {
     if (candidateIdx >= activeCandidates.length) {
@@ -1368,43 +1865,34 @@
 
   document.addEventListener("click", (e) => {
     const img = e.target.closest("img[data-raw]");
-    if (img) {
-      activeRawUrl = img.dataset.raw || "";
-      activeCandidates = buildPhotoCandidates(activeRawUrl);
-      candidateIdx = 0;
-
-      const orig = img.dataset.orig || toDriveViewUrl(activeRawUrl);
-      if (orig && orig !== "#") {
-        btnOpenOrig.href = orig;
-        btnOpenOrig.style.display = "inline-block";
-      } else {
-        btnOpenOrig.style.display = "none";
-      }
-
-      modalImg.classList.add("open");
-      tryLoadCandidate();
+    if (!img) return;
+    const gId = img.dataset.gallery;
+    const gIdx = Number(img.dataset.gidx || 0);
+    if (gId === "__draft__") {
+      galleryList = [...draftPhotos];
+    } else if (gId === "__edit__") {
+      galleryList = [...editPhotos];
+    } else {
+      const rec = records.find(x => x.id === gId);
+      galleryList = (rec && Array.isArray(rec.photos) && rec.photos.length) ? [...rec.photos] : [img.dataset.raw];
     }
+    modalImg.classList.add("open");
+    loadGalleryPhoto(gIdx);
   });
 
-  document.getElementById("btn-retry-img").addEventListener("click", () => {
-    if (!activeRawUrl) return;
-    activeCandidates = buildPhotoCandidates(activeRawUrl);
-    candidateIdx = 0;
-    tryLoadCandidate();
-  });
+  btnPrevImg.addEventListener("click", () => loadGalleryPhoto(galleryIdx - 1));
+  btnNextImg.addEventListener("click", () => loadGalleryPhoto(galleryIdx + 1));
+  document.getElementById("btn-retry-img").addEventListener("click", () => loadGalleryPhoto(galleryIdx));
 
-  document.getElementById("btn-close-img").addEventListener("click", () => {
+  function closeImgModal() {
     modalImg.classList.remove("open");
     bigImg.src = "";
     fallbackMsg.classList.remove("show");
-  });
+  }
 
+  document.getElementById("btn-close-img").addEventListener("click", closeImgModal);
   modalImg.addEventListener("click", (e) => {
-    if (e.target === modalImg) {
-      modalImg.classList.remove("open");
-      bigImg.src = "";
-      fallbackMsg.classList.remove("show");
-    }
+    if (e.target === modalImg) closeImgModal();
   });
 
   syncFromSheet();
