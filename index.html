@@ -20,11 +20,11 @@
     body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 48px; }
     button { cursor: pointer; border: none; border-radius: 10px; font-weight: 700; transition: 0.12s; touch-action: manipulation; }
     button:active { transform: scale(0.97); }
-    input {
+    input, select {
       width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px;
       font-size: 15px; background: #fff; color: var(--text); min-height: 44px;
     }
-    input:focus { outline: none; border-color: var(--blue); }
+    input:focus, select:focus { outline: none; border-color: var(--blue); }
 
     .header {
       background: #0f172a; color: #fff; padding: 11px 16px;
@@ -138,20 +138,15 @@
       padding: 7px 11px; font-size: 12px; border-radius: 8px; white-space: nowrap;
     }
 
-    /* 查詢分頁：KPI 統計列 */
-    .kpi-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px;
+    /* 年份與月份精簡下拉篩選列 */
+    .ym-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0;
     }
-    .kpi-card {
-      background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 11px;
-      padding: 8px 6px; text-align: center; cursor: pointer;
+    .ym-row select {
+      min-height: 38px; padding: 7px 10px; font-size: 13px; font-weight: 700;
+      background: #f8fafc; border-color: #cbd5e1;
     }
-    .kpi-card.active { border-color: var(--blue); background: #eff6ff; }
-    .kpi-num { font-size: 18px; font-weight: 900; color: #0f172a; line-height: 1.1; }
-    .kpi-num.red { color: var(--red); }
-    .kpi-num.amber { color: var(--amber); }
-    .kpi-num.green { color: var(--green); }
-    .kpi-lbl { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 3px; }
 
     /* 搜尋列 */
     .search-wrap { position: relative; }
@@ -448,26 +443,6 @@
 
   <!-- 分頁 2：查詢與展示 -->
   <section id="panel-list" class="tab-panel">
-    <!-- 統計儀表板（可點擊快速篩選） -->
-    <div class="kpi-grid">
-      <div class="kpi-card active" data-kpi="ALL">
-        <div class="kpi-num" id="kpi-all">0</div>
-        <div class="kpi-lbl">全部紀錄</div>
-      </div>
-      <div class="kpi-card" data-kpi="URGENT">
-        <div class="kpi-num red" id="kpi-urg">0</div>
-        <div class="kpi-lbl">🚨 急件</div>
-      </div>
-      <div class="kpi-card" data-kpi="MISSING">
-        <div class="kpi-num amber" id="kpi-miss">0</div>
-        <div class="kpi-lbl">⚠️ 待補單</div>
-      </div>
-      <div class="kpi-card" data-kpi="HAS_PHOTO">
-        <div class="kpi-num green" id="kpi-photo">0</div>
-        <div class="kpi-lbl">📷 有照片</div>
-      </div>
-    </div>
-
     <!-- 查詢與篩選區 -->
     <div class="box" style="padding:12px;">
       <div class="search-wrap">
@@ -475,17 +450,21 @@
         <button type="button" class="btn-clear-q" id="btn-clear-q" title="清除搜尋">✕</button>
       </div>
 
-      <!-- 類別快篩 -->
+      <!-- 類別與急件快篩 -->
       <div class="chip-row" id="cat-filter-bar">
         <button type="button" class="f-chip active" data-cat-filter="ALL">全部類別</button>
+        <button type="button" class="f-chip" id="btn-urgent-filter">🚨 僅看急件</button>
         <button type="button" class="f-chip" data-cat-filter="SPECIAL">🔴 特殊</button>
         <button type="button" class="f-chip" data-cat-filter="RETURN">🟠 退貨</button>
         <button type="button" class="f-chip" data-cat-filter="NEW">🟢 新品</button>
         <button type="button" class="f-chip" data-cat-filter="GENERAL">🔵 一般</button>
       </div>
 
-      <!-- 月份快篩 -->
-      <div id="month-bar" class="chip-row bordered"></div>
+      <!-- 年份／月份精簡下拉選單 -->
+      <div class="ym-row">
+        <select id="sel-year" aria-label="篩選年份"></select>
+        <select id="sel-month" aria-label="篩選月份"></select>
+      </div>
     </div>
 
     <!-- 展示模式與摺疊控制列 -->
@@ -645,9 +624,10 @@
   let draftPhotos = [];
 
   // 查詢與展示狀態
-  let kpiFilter = "ALL";       // ALL | URGENT | MISSING | HAS_PHOTO
+  let urgentOnly = false;
   let catFilter = "ALL";       // ALL | SPECIAL | RETURN | NEW | GENERAL
-  let selectedMonth = "ALL";
+  let selectedYear = "ALL";    // ALL | "2026" | ...
+  let selectedMonth = "ALL";   // ALL | "01".."12" 
   let viewMode = "card";       // card | compact
   let presentMode = false;
   let collapsedDays = {};
@@ -769,6 +749,8 @@
         const day = String(d.getDate()).padStart(2, "0");
         const wk = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
         return {
+          yearKey: String(y),
+          monthNum: m,
           monthKey: `${y}-${m}`,
           monthLabel: `${y}年${Number(m)}月`,
           dayKey: `${y}-${m}-${day}`,
@@ -784,6 +766,8 @@
       const mm = m[1].padStart(2, "0");
       const dd = m[2].padStart(2, "0");
       return {
+        yearKey: String(yNow),
+        monthNum: mm,
         monthKey: `${yNow}-${mm}`,
         monthLabel: `${yNow}年${Number(mm)}月`,
         dayKey: `${yNow}-${mm}-${dd}`,
@@ -792,16 +776,14 @@
       };
     }
     return {
+      yearKey: "0000",
+      monthNum: "00",
       monthKey: "0000-00",
       monthLabel: "未標示月份",
       dayKey: "0000-00-00",
       dayLabel: "未標示日期",
       sortTs: 0
     };
-  }
-
-  function isMissingNumber(r) {
-    return !normalizeSingleNrs(r.nrs) || parsePassTokens(r.passNo).length === 0;
   }
 
   function extractDriveId(url) {
@@ -1264,60 +1246,65 @@
       recentPeek.style.display = "none";
     }
 
-    // KPI 數字
+    // 類別與急件按鈕狀態
     const urgCnt = records.filter(r => r.urgent).length;
-    const missCnt = records.filter(r => isMissingNumber(r)).length;
-    const photoCnt = records.filter(r => Array.isArray(r.photos) && r.photos.length > 0).length;
-    document.getElementById("kpi-all").textContent = records.length;
-    document.getElementById("kpi-urg").textContent = urgCnt;
-    document.getElementById("kpi-miss").textContent = missCnt;
-    document.getElementById("kpi-photo").textContent = photoCnt;
-
-    document.querySelectorAll("[data-kpi]").forEach(el => {
-      el.classList.toggle("active", el.dataset.kpi === kpiFilter);
-    });
+    const urgBtn = document.getElementById("btn-urgent-filter");
+    urgBtn.classList.toggle("active-red", urgentOnly);
+    urgBtn.textContent = urgCnt > 0 ? `🚨 急件 (${urgCnt})` : "🚨 急件";
 
     document.querySelectorAll("[data-cat-filter]").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.catFilter === catFilter);
     });
 
-    // 月份清單
-    const monthCountMap = new Map();
+    // 年份下拉選單
+    const yearCountMap = new Map();
     records.forEach(r => {
       const info = getRecordDateInfo(r);
-      if (!monthCountMap.has(info.monthKey)) {
-        monthCountMap.set(info.monthKey, { key: info.monthKey, label: info.monthLabel, count: 0 });
-      }
-      monthCountMap.get(info.monthKey).count += 1;
+      if (info.yearKey === "0000") return;
+      yearCountMap.set(info.yearKey, (yearCountMap.get(info.yearKey) || 0) + 1);
     });
-    const monthList = Array.from(monthCountMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+    const yearList = Array.from(yearCountMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+    if (selectedYear !== "ALL" && !yearCountMap.has(selectedYear)) {
+      selectedYear = "ALL";
+    }
+
+    const selYear = document.getElementById("sel-year");
+    selYear.innerHTML = [
+      `<option value="ALL">全部年份 (${records.length})</option>`,
+      ...yearList.map(([y, cnt]) => `<option value="${esc(y)}">${esc(y)}年 (${cnt})</option>`)
+    ].join("");
+    selYear.value = selectedYear;
+
+    // 月份下拉選單（連動目前選擇的年份）
+    const monthCountMap = new Map();
+    let yearScopedTotal = 0;
+    records.forEach(r => {
+      const info = getRecordDateInfo(r);
+      if (selectedYear !== "ALL" && info.yearKey !== selectedYear) return;
+      yearScopedTotal += 1;
+      if (info.monthNum === "00") return;
+      monthCountMap.set(info.monthNum, (monthCountMap.get(info.monthNum) || 0) + 1);
+    });
+    const monthList = Array.from(monthCountMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
     if (selectedMonth !== "ALL" && !monthCountMap.has(selectedMonth)) {
       selectedMonth = "ALL";
     }
 
-    const monthBar = document.getElementById("month-bar");
-    if (monthList.length > 0) {
-      monthBar.style.display = "flex";
-      monthBar.innerHTML = [
-        `<button type="button" class="f-chip ${selectedMonth === "ALL" ? "active-blue" : ""}" data-month="ALL">全部月份 (${records.length})</button>`,
-        ...monthList.map(m =>
-          `<button type="button" class="f-chip ${selectedMonth === m.key ? "active-blue" : ""}" data-month="${esc(m.key)}">${esc(m.label)} (${m.count})</button>`
-        )
-      ].join("");
-    } else {
-      monthBar.style.display = "none";
-      monthBar.innerHTML = "";
-    }
+    const selMonth = document.getElementById("sel-month");
+    selMonth.innerHTML = [
+      `<option value="ALL">全部月份 (${yearScopedTotal})</option>`,
+      ...monthList.map(([m, cnt]) => `<option value="${esc(m)}">${Number(m)}月 (${cnt})</option>`)
+    ].join("");
+    selMonth.value = selectedMonth;
 
     // 執行多條件篩選
     const filtered = records
       .filter(r => {
-        if (kpiFilter === "URGENT" && !r.urgent) return false;
-        if (kpiFilter === "MISSING" && !isMissingNumber(r)) return false;
-        if (kpiFilter === "HAS_PHOTO" && !(Array.isArray(r.photos) && r.photos.length > 0)) return false;
+        if (urgentOnly && !r.urgent) return false;
         if (catFilter !== "ALL" && r.cat !== catFilter) return false;
         const info = getRecordDateInfo(r);
-        if (selectedMonth !== "ALL" && info.monthKey !== selectedMonth) return false;
+        if (selectedYear !== "ALL" && info.yearKey !== selectedYear) return false;
+        if (selectedMonth !== "ALL" && info.monthNum !== selectedMonth) return false;
         if (q) {
           const text = `${r.nrs || ""} ${r.passNo || ""} ${r.plant || ""} ${r.part || ""} ${r.note || ""} ${r.createdAt || ""}`.toLowerCase();
           if (!text.includes(q)) return false;
@@ -1326,7 +1313,7 @@
       })
       .sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0));
 
-    const hasActiveFilter = kpiFilter !== "ALL" || catFilter !== "ALL" || selectedMonth !== "ALL" || qRaw.length > 0;
+    const hasActiveFilter = urgentOnly || catFilter !== "ALL" || selectedYear !== "ALL" || selectedMonth !== "ALL" || qRaw.length > 0;
     const summaryLine = document.getElementById("summary-line");
     const resetBtn = document.getElementById("btn-reset-filter");
     const area = document.getElementById("list-area");
@@ -1431,16 +1418,12 @@
 
   document.getElementById("btn-go-list").addEventListener("click", () => switchMainTab("list"));
 
-  // KPI 卡片篩選
-  document.querySelectorAll("[data-kpi]").forEach(card => {
-    card.addEventListener("click", () => {
-      const target = card.dataset.kpi;
-      kpiFilter = (kpiFilter === target && target !== "ALL") ? "ALL" : target;
-      render();
-    });
+  // 類別與急件快篩
+  document.getElementById("btn-urgent-filter").addEventListener("click", () => {
+    urgentOnly = !urgentOnly;
+    render();
   });
 
-  // 類別快篩
   document.getElementById("cat-filter-bar").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-cat-filter]");
     if (!btn) return;
@@ -1448,11 +1431,15 @@
     render();
   });
 
-  // 月份快篩
-  document.getElementById("month-bar").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-month]");
-    if (!btn) return;
-    selectedMonth = btn.dataset.month;
+  // 年份與月份下拉選單
+  document.getElementById("sel-year").addEventListener("change", (e) => {
+    selectedYear = e.target.value;
+    selectedMonth = "ALL";
+    render();
+  });
+
+  document.getElementById("sel-month").addEventListener("change", (e) => {
+    selectedMonth = e.target.value;
     render();
   });
 
@@ -1481,8 +1468,9 @@
   });
 
   document.getElementById("btn-reset-filter").addEventListener("click", () => {
-    kpiFilter = "ALL";
+    urgentOnly = false;
     catFilter = "ALL";
+    selectedYear = "ALL";
     selectedMonth = "ALL";
     document.getElementById("q-text").value = "";
     render();
@@ -1601,7 +1589,10 @@
     });
 
     collapsedDays[dateVal] = false;
-    if (selectedMonth !== "ALL" && !dateVal.startsWith(selectedMonth)) {
+    if (selectedYear !== "ALL" && !dateVal.startsWith(selectedYear)) {
+      selectedYear = "ALL";
+    }
+    if (selectedMonth !== "ALL" && dateVal.slice(5, 7) !== selectedMonth) {
       selectedMonth = "ALL";
     }
 
