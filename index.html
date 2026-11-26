@@ -74,7 +74,9 @@
       font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; line-height: 1.25;
     }
     .field { margin-bottom: 10px; }
+    .field.hidden { display: none; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .row2.single-col { grid-template-columns: 1fr; }
     .row2 .field { margin-bottom: 0; }
 
     .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
@@ -380,8 +382,8 @@
         <button type="button" class="pill" data-cat="GENERAL">🔵 一般</button>
       </div>
 
-      <div class="row2">
-        <div class="field">
+      <div class="row2" id="in-num-row">
+        <div class="field" id="in-nrs-field">
           <span class="label">No. NRS（6碼單一）</span>
           <input type="text" id="in-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
         </div>
@@ -517,8 +519,8 @@
       <button type="button" class="pill" data-cat="GENERAL">🔵 一般</button>
     </div>
 
-    <div class="row2">
-      <div class="field">
+    <div class="row2" id="edit-num-row">
+      <div class="field" id="edit-nrs-field">
         <span class="label">No. NRS（6碼單一）</span>
         <input type="text" id="edit-nrs" inputmode="numeric" maxlength="10" placeholder="例：063412" />
       </div>
@@ -935,6 +937,16 @@
     });
   }
 
+  function syncNrsFieldVisibility(mode, catVal) {
+    const isGeneral = catVal === "GENERAL";
+    const rowEl = document.getElementById(`${mode}-num-row`);
+    const fieldEl = document.getElementById(`${mode}-nrs-field`);
+    const inputEl = document.getElementById(`${mode}-nrs`);
+    if (fieldEl) fieldEl.classList.toggle("hidden", isGeneral);
+    if (rowEl) rowEl.classList.toggle("single-col", isGeneral);
+    if (isGeneral && inputEl) inputEl.value = "";
+  }
+
   function compressImage(file) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -1003,9 +1015,12 @@
       return;
     }
 
+    const isGeneral = (mode === "in" ? selectedCat : editSelectedCat) === "GENERAL";
     btnOcr.disabled = true;
     hintEl.classList.add("show");
-    hintEl.innerHTML = "⚡ 正在快速辨識 <b>No. NRS (6碼)</b> 與 <b>多張 8開頭 (7碼) 放行單</b>...";
+    hintEl.innerHTML = isGeneral
+      ? "⚡ 正在快速辨識 <b>多張 8開頭 (7碼) 放行單</b>..."
+      : "⚡ 正在快速辨識 <b>No. NRS (6碼)</b> 與 <b>多張 8開頭 (7碼) 放行單</b>...";
 
     try {
       const lightPhotos = await Promise.all(
@@ -1023,10 +1038,10 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "辨識失敗");
 
-      const nrsList = parsePassTokens(data.nrsList || data.nrs || []);
+      const nrsList = isGeneral ? [] : parsePassTokens(data.nrsList || data.nrs || []);
       const passList = parsePassTokens(data.passList || data.passNo || []);
 
-      if (nrsList.length === 1 && !normalizeSingleNrs(nrsInput.value)) {
+      if (!isGeneral && nrsList.length === 1 && !normalizeSingleNrs(nrsInput.value)) {
         nrsInput.value = nrsList[0];
       }
       if (passList.length > 0) {
@@ -1034,14 +1049,18 @@
       }
 
       if (!nrsList.length && !passList.length) {
-        hintEl.innerHTML = "⚠️ 未偵測到符合的 <b>NRS+6碼</b> 或 <b>8+6碼</b>，請確認拍攝清晰度或手動輸入。";
+        hintEl.innerHTML = isGeneral
+          ? "⚠️ 未偵測到符合的 <b>8+6碼放行單號</b>，請確認拍攝清晰度或手動輸入。"
+          : "⚠️ 未偵測到符合的 <b>NRS+6碼</b> 或 <b>8+6碼</b>，請確認拍攝清晰度或手動輸入。";
         return;
       }
 
       const chips = [];
-      nrsList.forEach(num => {
-        chips.push(`<button type="button" class="ocr-chip" data-set-nrs="${mode}-nrs" data-nrs-val="${esc(num)}">套用 NRS：${esc(num)}</button>`);
-      });
+      if (!isGeneral) {
+        nrsList.forEach(num => {
+          chips.push(`<button type="button" class="ocr-chip" data-set-nrs="${mode}-nrs" data-nrs-val="${esc(num)}">套用 NRS：${esc(num)}</button>`);
+        });
+      }
       if (passList.length > 1) {
         chips.push(`<button type="button" class="ocr-chip all-btn" data-fill-pass="${mode}-pass" data-fill-all="${esc(passList.join(", "))}">＋ 全部 ${passList.length} 張放行單</button>`);
       }
@@ -1049,8 +1068,12 @@
         chips.push(`<button type="button" class="ocr-chip" data-fill-pass="${mode}-pass" data-fill-val="${esc(num)}">＋ 放行：${esc(num)}</button>`);
       });
 
-      hintEl.innerHTML = `<div>✨ 偵測結果（NRS 單一覆蓋、放行單可多張累加）：</div><div class="ocr-chips">${chips.join("")}</div>`;
-      toast(`✨ 偵測到 ${nrsList.length} 組 NRS、${passList.length} 張放行單`);
+      hintEl.innerHTML = isGeneral
+        ? `<div>✨ 偵測結果（放行單可多張累加）：</div><div class="ocr-chips">${chips.join("")}</div>`
+        : `<div>✨ 偵測結果（NRS 單一覆蓋、放行單可多張累加）：</div><div class="ocr-chips">${chips.join("")}</div>`;
+      toast(isGeneral
+        ? `✨ 偵測到 ${passList.length} 張放行單`
+        : `✨ 偵測到 ${nrsList.length} 組 NRS、${passList.length} 張放行單`);
     } catch (err) {
       hintEl.innerHTML = `⚠️ 單號偵測失敗：${esc(err.message || "請檢查 Apps Script 設定與部署版本")}`;
     } finally {
@@ -1063,15 +1086,18 @@
     if (r.urgent) tags.push("急件");
     const catClean = (CAT_TEXT[r.cat] || "特殊").replace(/^[^\u4e00-\u9fa5]+/, "");
     tags.push(catClean);
-    const nrs = normalizeSingleNrs(r.nrs) || "待補";
+    const rawNrs = normalizeSingleNrs(r.nrs);
     const passes = parsePassTokens(r.passNo);
     const passStr = passes.length ? passes.join(", ") : "無";
     const lines = [
-      `【${tags.join("｜")}】${r.plant || "美光 F16"} - ${r.part || "未填工件"}`,
-      `NRS：${nrs}`,
-      `放行單：${passStr}`,
-      `日期：${r.createdAt || ""}`
+      `【${tags.join("｜")}】${r.plant || "美光 F16"} - ${r.part || "未填工件"}`
     ];
+    if (r.cat !== "GENERAL") {
+      lines.push(`NRS：${rawNrs || "待補"}`);
+    } else if (rawNrs) {
+      lines.push(`NRS：${rawNrs}`);
+    }
+    lines.push(`放行單：${passStr}`, `日期：${r.createdAt || ""}`);
     if (r.note) lines.push(`備註：${r.note}`);
     return lines.join("\n");
   }
@@ -1124,7 +1150,7 @@
     const passTokens = parsePassTokens(r.passNo);
     const nrsBadge = singleNrs
       ? `<span class="b b-nrs">NRS ${highlightText(singleNrs, q)}</span>`
-      : `<span class="b b-nonrs">待補 NRS</span>`;
+      : (r.cat === "GENERAL" ? "" : `<span class="b b-nonrs">待補 NRS</span>`);
     const passBadges = passTokens
       .map(p => `<span class="b b-pass">放行 ${highlightText(p, q)}</span>`)
       .join("");
@@ -1177,7 +1203,7 @@
             <span class="b b-cat-${r.cat}" style="padding:2px 6px;font-size:11px;">${CAT_TEXT[r.cat] || "特殊"}</span>
             ${singleNrs
               ? `<span class="b b-nrs" style="padding:2px 6px;font-size:12px;">NRS ${highlightText(singleNrs, q)}</span>`
-              : `<span class="b b-nonrs" style="padding:2px 6px;font-size:11px;">待補 NRS</span>`
+              : (r.cat === "GENERAL" ? "" : `<span class="b b-nonrs" style="padding:2px 6px;font-size:11px;">待補 NRS</span>`)
             }
           </div>
           <div class="compact-part">${highlightText(r.plant, q)} ｜ ${highlightText(r.part, q)}</div>
@@ -1206,7 +1232,7 @@
       <div class="badges" style="margin-bottom:8px;">
         ${r.urgent ? `<span class="b b-urg">🚨 急件</span>` : ""}
         <span class="b b-cat-${r.cat}">${CAT_TEXT[r.cat] || "特殊"}</span>
-        ${singleNrs ? `<span class="b b-nrs">NRS ${esc(singleNrs)}</span>` : `<span class="b b-nonrs">待補 NRS</span>`}
+        ${singleNrs ? `<span class="b b-nrs">NRS ${esc(singleNrs)}</span>` : (r.cat === "GENERAL" ? "" : `<span class="b b-nonrs">待補 NRS</span>`)}
         ${passTokens.map(p => `<span class="b b-pass">放行 ${esc(p)}</span>`).join("")}
       </div>
       <div style="font-size:17px; font-weight:900; margin-bottom:6px;">${esc(r.plant)} ｜ ${esc(r.part)}</div>
@@ -1497,6 +1523,7 @@
     if (!btn) return;
     selectedCat = btn.dataset.cat;
     applyCatPillsUI("#cat-pills", selectedCat);
+    syncNrsFieldVisibility("in", selectedCat);
   });
 
   document.getElementById("edit-cat-pills").addEventListener("click", (e) => {
@@ -1504,6 +1531,7 @@
     if (!btn) return;
     editSelectedCat = btn.dataset.cat;
     applyCatPillsUI("#edit-cat-pills", editSelectedCat);
+    syncNrsFieldVisibility("edit", editSelectedCat);
   });
 
   async function handleNewFiles(fileList, targetList, renderFn, mode) {
@@ -1550,9 +1578,10 @@
   });
 
   document.getElementById("in-date").value = getTodayDateInputStr();
+  syncNrsFieldVisibility("in", selectedCat);
 
   document.getElementById("btn-save").addEventListener("click", async () => {
-    const nrs = normalizeSingleNrs(document.getElementById("in-nrs").value);
+    const nrs = selectedCat === "GENERAL" ? "" : normalizeSingleNrs(document.getElementById("in-nrs").value);
     const passNo = normalizePassListStr(document.getElementById("in-pass").value);
     const dateVal = document.getElementById("in-date").value || getTodayDateInputStr();
     const plant = document.getElementById("in-plant").value.trim() || "美光 F16";
@@ -1617,8 +1646,9 @@
     editingId = r.id;
     editSelectedCat = r.cat || "SPECIAL";
     applyCatPillsUI("#edit-cat-pills", editSelectedCat);
+    syncNrsFieldVisibility("edit", editSelectedCat);
     document.getElementById("edit-urgent").checked = Boolean(r.urgent);
-    document.getElementById("edit-nrs").value = normalizeSingleNrs(r.nrs || "");
+    document.getElementById("edit-nrs").value = editSelectedCat === "GENERAL" ? "" : normalizeSingleNrs(r.nrs || "");
     document.getElementById("edit-pass").value = normalizePassListStr(r.passNo || "");
     const info = getRecordDateInfo(r);
     document.getElementById("edit-date").value = info.dayKey !== "0000-00-00" ? info.dayKey : getTodayDateInputStr();
@@ -1736,7 +1766,7 @@
   });
 
   document.getElementById("btn-save-edit").addEventListener("click", async () => {
-    const newNrs = normalizeSingleNrs(document.getElementById("edit-nrs").value);
+    const newNrs = editSelectedCat === "GENERAL" ? "" : normalizeSingleNrs(document.getElementById("edit-nrs").value);
     const newPass = normalizePassListStr(document.getElementById("edit-pass").value);
     const newDateVal = document.getElementById("edit-date").value;
     const newPlant = document.getElementById("edit-plant").value.trim() || "美光 F16";
