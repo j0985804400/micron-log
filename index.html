@@ -267,13 +267,7 @@
       padding: 5px 10px; font-size: 12px; border-radius: 7px; background: transparent; color: #475569;
     }
     .seg-mini button.active { background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .btn-present {
-      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
-      padding: 6px 10px; font-size: 12px; border-radius: 8px;
-    }
-    .btn-present.on {
-      background: #0f766e; color: #ffffff; border-color: #0f766e;
-    }
+
     .btn-fold-mini {
       background: #e2e8f0; color: #1e293b; padding: 6px 9px; font-size: 12px; border-radius: 8px;
     }
@@ -353,17 +347,6 @@
       font-size: 11px; font-weight: 800; padding: 3px 7px; border-radius: 99px;
     }
 
-    /* 展示模式（防誤刪、放大重點） */
-    body.present-mode .btn-del,
-    body.present-mode .btn-add-photo { display: none !important; }
-    body.present-mode .item-actions { grid-template-columns: 1fr; }
-    body.present-mode .item { padding: 15px; border-width: 2px; }
-    body.present-mode .item-main { font-size: 18px; }
-    body.present-mode .b-nrs,
-    body.present-mode .b-pass { font-size: 14px; padding: 4px 9px; }
-    body.present-mode .thumb,
-    body.present-mode .thumb img { width: 96px; height: 96px; }
-
     mark.hl {
       background: #fde047; color: #0f172a; padding: 0 2px; border-radius: 3px;
     }
@@ -386,9 +369,21 @@
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 8px; font-size: 13px; color: #cbd5e1; font-weight: 700;
     }
+    .img-viewport {
+      width: 100%; max-height: 72vh; overflow: auto;
+      -webkit-overflow-scrolling: touch; border-radius: 8px; background: #1e293b;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .img-viewport.zoomed {
+      display: block; text-align: left;
+    }
     .img-modal-box img {
-      display: block; margin: 0 auto; max-width: 100%; max-height: 70vh;
+      display: block; margin: 0 auto; max-width: 100%; max-height: 72vh;
       object-fit: contain; border-radius: 8px; background: #1e293b;
+      transition: width 0.15s ease;
+    }
+    .img-viewport.zoomed img {
+      max-width: none; max-height: none; width: 220%; height: auto; margin: 0;
     }
     .img-fallback-msg {
       display: none; margin: 12px auto 4px; padding: 14px 12px; border-radius: 10px;
@@ -554,7 +549,6 @@
           <button type="button" class="active" data-view-mode="card">🃏 卡片</button>
           <button type="button" data-view-mode="compact">📋 條列</button>
         </div>
-        <button type="button" class="btn-present" id="btn-present-mode">👁️ 展示模式</button>
       </div>
       <div class="view-right">
         <button type="button" class="btn-fold-mini" id="btn-expand-all">展開</button>
@@ -674,13 +668,16 @@
       <span id="img-modal-title">單據照片預覽</span>
       <span id="img-modal-counter">1 / 1</span>
     </div>
-    <img id="big-img" src="" alt="放大照片" />
+    <div class="img-viewport" id="img-viewport">
+      <img id="big-img" src="" alt="放大照片" />
+    </div>
     <div id="img-fallback-msg" class="img-fallback-msg">
       預覽圖目前無法直接顯示（可能仍在產生縮圖或受到瀏覽器限制），請點下方「開 Drive 原圖」檢視。
     </div>
     <div class="img-modal-actions">
       <button type="button" class="btn-nav-img" id="btn-prev-img">◀ 上一張</button>
       <button type="button" class="btn-nav-img" id="btn-next-img">下一張 ▶</button>
+      <button type="button" class="btn-retry-img" id="btn-zoom-img">🔍 放大</button>
       <button type="button" class="btn-retry-img" id="btn-retry-img">重載</button>
       <a id="btn-open-orig" class="btn-open-orig" href="#" target="_blank" rel="noopener noreferrer">開 Drive 原圖</a>
       <button type="button" class="btn-close-img" id="btn-close-img">關閉</button>
@@ -744,7 +741,6 @@
   let selectedYear = "ALL";    // ALL | "2026" | ...
   let selectedMonth = "ALL";   // ALL | "01".."12" 
   let viewMode = "card";       // card | compact
-  let presentMode = false;
   let collapsedDays = {};
   let hasInitializedCollapse = false;
 
@@ -916,9 +912,9 @@
     if (!driveId) return [url];
     const ts = Date.now();
     return [
-      `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600&t=${ts}`,
+      `https://drive.google.com/thumbnail?id=${driveId}&sz=w2400&t=${ts}`,
       `https://drive.google.com/uc?export=view&id=${driveId}&t=${ts}`,
-      `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000&t=${ts}`
+      `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600&t=${ts}`
     ];
   }
 
@@ -1066,7 +1062,7 @@
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          const max = 1600;
+          const max = 2200;
           let w = img.width, h = img.height;
           if (w > max || h > max) {
             if (w > h) { h = Math.round(h * max / w); w = max; }
@@ -1074,8 +1070,11 @@
           }
           const c = document.createElement("canvas");
           c.width = w; c.height = h;
-          c.getContext("2d").drawImage(img, 0, 0, w, h);
-          resolve(c.toDataURL("image/jpeg", 0.85));
+          const ctx = c.getContext("2d");
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL("image/jpeg", 0.92));
         };
         img.src = e.target.result;
       };
@@ -1362,8 +1361,7 @@
       ` : `<div style="font-size:12px; color:#94a3b8; margin-bottom:12px;">尚無附圖</div>`}
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
         <button type="button" class="btn-copy-rec" data-copy-id="${r.id}">📋 複製文字</button>
-        ${presentMode ? `<button type="button" id="btn-close-detail-2" style="background:#334155;color:#fff;padding:9px;font-size:13px;">關閉</button>`
-          : `<button type="button" class="btn-add-photo" data-edit-from-detail="${r.id}">✏️ 修改紀錄</button>`}
+        <button type="button" class="btn-add-photo" data-edit-from-detail="${r.id}">✏️ 修改紀錄</button>
       </div>
     `;
     document.getElementById("modal-detail").classList.add("open");
@@ -1593,15 +1591,6 @@
     });
   });
 
-  // 展示模式切換（防誤刪、放大重點）
-  document.getElementById("btn-present-mode").addEventListener("click", (e) => {
-    presentMode = !presentMode;
-    document.body.classList.toggle("present-mode", presentMode);
-    e.currentTarget.classList.toggle("on", presentMode);
-    e.currentTarget.textContent = presentMode ? "👁️ 展示中" : "👁️ 展示模式";
-    toast(presentMode ? "👁️ 已開啟展示模式（隱藏刪除與編輯鈕）" : "已切回一般管理模式");
-  });
-
   // 清除搜尋與重設所有篩選
   document.getElementById("btn-clear-q").addEventListener("click", () => {
     document.getElementById("q-text").value = "";
@@ -1733,7 +1722,7 @@
     const sw = Math.max(20, Math.min(fullW - sx, Math.round(cropState.rw * fullW)));
     const sh = Math.max(20, Math.min(fullH - sy, Math.round(cropState.rh * fullH)));
 
-    const maxOut = 1600;
+    const maxOut = 2200;
     let ow = sw, oh = sh;
     if (ow > maxOut || oh > maxOut) {
       if (ow > oh) { oh = Math.round(oh * maxOut / ow); ow = maxOut; }
@@ -1742,8 +1731,11 @@
     const out = document.createElement("canvas");
     out.width = ow;
     out.height = oh;
-    out.getContext("2d").drawImage(temp, sx, sy, sw, sh, 0, 0, ow, oh);
-    return out.toDataURL("image/jpeg", 0.86);
+    const octx = out.getContext("2d");
+    octx.imageSmoothingEnabled = true;
+    octx.imageSmoothingQuality = "high";
+    octx.drawImage(temp, sx, sy, sw, sh, 0, 0, ow, oh);
+    return out.toDataURL("image/jpeg", 0.92);
   }
 
   function openCropModal(dataUrl) {
@@ -2192,17 +2184,31 @@
   const bigImg = document.getElementById("big-img");
   const btnOpenOrig = document.getElementById("btn-open-orig");
   const fallbackMsg = document.getElementById("img-fallback-msg");
+  const imgViewport = document.getElementById("img-viewport");
   const imgCounter = document.getElementById("img-modal-counter");
   const btnPrevImg = document.getElementById("btn-prev-img");
   const btnNextImg = document.getElementById("btn-next-img");
+  const btnZoomImg = document.getElementById("btn-zoom-img");
 
   let galleryList = [];
   let galleryIdx = 0;
   let activeCandidates = [];
   let candidateIdx = 0;
+  let isImgZoomed = false;
+
+  function setImgZoom(flag) {
+    isImgZoomed = Boolean(flag);
+    imgViewport.classList.toggle("zoomed", isImgZoomed);
+    btnZoomImg.textContent = isImgZoomed ? "🔍 還原" : "🔍 放大";
+    if (!isImgZoomed) {
+      imgViewport.scrollTop = 0;
+      imgViewport.scrollLeft = 0;
+    }
+  }
 
   function loadGalleryPhoto(idx) {
     if (!galleryList.length) return;
+    setImgZoom(false);
     galleryIdx = Math.max(0, Math.min(idx, galleryList.length - 1));
     const rawUrl = galleryList[galleryIdx];
     activeCandidates = buildPhotoCandidates(rawUrl);
@@ -2266,9 +2272,12 @@
 
   btnPrevImg.addEventListener("click", () => loadGalleryPhoto(galleryIdx - 1));
   btnNextImg.addEventListener("click", () => loadGalleryPhoto(galleryIdx + 1));
+  btnZoomImg.addEventListener("click", () => setImgZoom(!isImgZoomed));
+  bigImg.addEventListener("click", () => setImgZoom(!isImgZoomed));
   document.getElementById("btn-retry-img").addEventListener("click", () => loadGalleryPhoto(galleryIdx));
 
   function closeImgModal() {
+    setImgZoom(false);
     modalImg.classList.remove("open");
     bigImg.src = "";
     fallbackMsg.classList.remove("show");
@@ -2283,5 +2292,4 @@
 })();
 </script>
 </body>
-
 </html>
